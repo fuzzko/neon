@@ -20,7 +20,7 @@
 
 %%% inet %%%
 
-inet_port({socket, Socket}) ->
+inet_port(Socket) ->
   case inet:port(Socket) of
     {ok, Num} -> {ok, Num};
     {error, _} -> {error, nil}
@@ -32,21 +32,21 @@ tcp_connect(Host, Port, IpVersion) ->
   Inet = ip_version_to_inet(IpVersion),
 
   Resp = gen_tcp:connect(Host, Port, [binary, {packet, raw}, {active, false}, Inet]),
-  normalise_socket(Resp).
+  normalise(Resp).
 
-tcp_shutdown({socket, TcpSocket}) ->
+tcp_shutdown(TcpSocket) ->
   Shut = gen_tcp:shutdown(TcpSocket, read_write),
   normalise(Shut).
 
-tcp_recv({socket, Socket}, Size, Timeout) ->
-  Resp = gen_tcp:recv(Socket, Size, Timeout),
+tcp_recv(TcpSocket, Size, Timeout) ->
+  Resp = gen_tcp:recv(TcpSocket, Size, Timeout),
   normalise(Resp).
 
-tcp_recv_forever({socket, Socket}, Size) ->
-  Resp = gen_tcp:recv(Socket, Size, infinity),
+tcp_recv_forever(TcpSocket, Size) ->
+  Resp = gen_tcp:recv(TcpSocket, Size, infinity),
   normalise(Resp).
 
-tcp_send({socket, TcpSocket}, Packet) ->
+tcp_send(TcpSocket, Packet) ->
     Sent = gen_tcp:send(TcpSocket, Packet),
     normalise(Sent).
 
@@ -62,13 +62,13 @@ tcp_listen({listen_options, Port, IpAddress}) ->
     Inet
   ],
   Resp = gen_tcp:listen(Port, Options),
-  normalise_socket(Resp).
+  normalise(Resp).
 
-tcp_accept({socket, TcpSocket}, Timeout) ->
+tcp_accept(TcpSocket, Timeout) ->
   Resp = gen_tcp:accept(TcpSocket, Timeout),
-  normalise_socket(Resp).
+  normalise(Resp).
 
-tcp_close({socket, TcpSocket}) ->
+tcp_close(TcpSocket) ->
   case gen_tcp:close(TcpSocket) of
     ok -> {ok, nil};
     _ -> {error, nil}
@@ -84,7 +84,7 @@ ip_address_and_version({ipv6_address, A, B, C, D, E, F, G, H}) ->
 
 %%% ssl %%%
 
-ssl_connect({socket, TcpSock}, Host, Verified) ->
+ssl_connect(TcpSocket, Host, Verified) ->
   ssl:start(),
 
   Opts = case Verified of
@@ -99,35 +99,32 @@ ssl_connect({socket, TcpSock}, Host, Verified) ->
     }]
   end,
 
-  Resp = ssl:connect(TcpSock, [binary, {packet, raw}, {active, false} | Opts]),
-  normalise_socket(Resp).
+  Resp = ssl:connect(TcpSocket, [binary, {packet, raw}, {active, false} | Opts]),
+  normalise(Resp).
 
-ssl_shutdown({socket, SslSocket}) ->
+ssl_shutdown(SslSocket) ->
   Shut = ssl:shutdown(SslSocket, read_write),
   normalise(Shut).
 
-ssl_close({socket, SslSocket}) ->
+ssl_close(SslSocket) ->
   with_rescue(fun() ->
     Resp = ssl:close(SslSocket),
     normalise(Resp)
   end).
 
-ssl_recv({socket, SslSocket}, Size, Timeout) ->
+ssl_recv(SslSocket, Size, Timeout) ->
   Resp = ssl:recv(SslSocket, Size, Timeout),
   normalise(Resp).
 
-ssl_recv_forever({socket, SslSocket}, Size) ->
+ssl_recv_forever(SslSocket, Size) ->
   Resp = ssl:recv(SslSocket, Size, infinity),
   normalise(Resp).
 
-ssl_send({socket, SslSocket}, Packet) ->
+ssl_send(SslSocket, Packet) ->
   Sent = ssl:send(SslSocket, Packet),
   normalise(Sent).
 
 %%% Normalise results %%%
-
-normalise_socket({ok, Socket}) -> {ok, {socket, Socket}};
-normalise_socket({error, _} = E) -> E.
 
 normalise(ok) -> {ok, nil};
 normalise({ok, T}) -> {ok, T};

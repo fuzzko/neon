@@ -1,76 +1,77 @@
 import gleam/result
-import lumen
+import lumen/inet
 import lumen/tcp.{type Tcp}
 
 pub type Ssl
 
 pub fn upgrade(
-  socket: lumen.Socket(Tcp),
+  socket: Tcp,
   host: String,
   verified: Bool,
-) -> Result(lumen.Socket(Ssl), lumen.PosixError) {
+) -> Result(Ssl, inet.PosixError) {
   ssl_upgrade_(socket, host, verified)
 }
 
-pub fn send(
-  socket: lumen.Socket(Ssl),
-  payload: BitArray,
-) -> Result(lumen.Socket(Ssl), lumen.PosixError) {
+pub fn send(socket: Ssl, payload: BitArray) -> Result(Ssl, inet.PosixError) {
   ssl_send_(socket, payload)
   |> result.replace(socket)
 }
 
 pub fn receive(
-  socket: lumen.Socket(Ssl),
+  socket: Ssl,
   length: Int,
   within timeout: Int,
-) -> Result(BitArray, lumen.PosixError) {
+) -> Result(BitArray, inet.PosixError) {
   ssl_receive_(socket, length, timeout)
 }
 
 pub fn receive_forever(
-  socket: lumen.Socket(Ssl),
+  socket: Ssl,
   length: Int,
-) -> Result(BitArray, lumen.PosixError) {
+) -> Result(BitArray, inet.PosixError) {
   ssl_receive_forever_(socket, length)
 }
 
-pub fn shutdown(socket: lumen.Socket(Ssl)) -> Result(Nil, lumen.PosixError) {
+pub fn shutdown(socket: Ssl) -> Result(Nil, inet.PosixError) {
   ssl_shutdown_(socket)
 }
 
-pub fn close(socket: lumen.Socket(Ssl)) -> Result(Nil, lumen.PosixError) {
+pub fn close(socket: Ssl) -> Result(Nil, inet.PosixError) {
   ssl_close_(socket)
+}
+
+pub fn port(socket: Tcp) -> Result(Int, Nil) {
+  inet_port_(socket)
 }
 
 @external(erlang, "lumen_ffi", "ssl_connect")
 fn ssl_upgrade_(
-  socket: lumen.Socket(Tcp),
+  socket: Tcp,
   host: String,
   verified: Bool,
-) -> Result(lumen.Socket(Ssl), lumen.PosixError)
+) -> Result(Ssl, inet.PosixError)
 
 @external(erlang, "lumen_ffi", "ssl_send")
-fn ssl_send_(
-  socket: lumen.Socket(Ssl),
-  payload: BitArray,
-) -> Result(Nil, lumen.PosixError)
+fn ssl_send_(socket: Ssl, payload: BitArray) -> Result(Nil, inet.PosixError)
 
 @external(erlang, "lumen_ffi", "ssl_recv")
 fn ssl_receive_(
-  socket: lumen.Socket(Ssl),
+  socket: Ssl,
   length: Int,
   timeout: Int,
-) -> Result(BitArray, lumen.PosixError)
+) -> Result(BitArray, inet.PosixError)
 
 @external(erlang, "lumen_ffi", "ssl_recv_forever")
 fn ssl_receive_forever_(
-  socket: lumen.Socket(Ssl),
+  socket: Ssl,
   length: Int,
-) -> Result(BitArray, lumen.PosixError)
+) -> Result(BitArray, inet.PosixError)
 
 @external(erlang, "lumen_ffi", "ssl_shutdown")
-fn ssl_shutdown_(socket: lumen.Socket(Ssl)) -> Result(Nil, lumen.PosixError)
+fn ssl_shutdown_(socket: Ssl) -> Result(Nil, inet.PosixError)
 
 @external(erlang, "lumen_ffi", "ssl_close")
-fn ssl_close_(socket: lumen.Socket(Ssl)) -> Result(Nil, lumen.PosixError)
+fn ssl_close_(socket: Ssl) -> Result(Nil, inet.PosixError)
+
+@external(erlang, "lumen_ffi", "inet_port")
+fn inet_port_(socket: Tcp) -> Result(Int, Nil)

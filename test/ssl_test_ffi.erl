@@ -38,7 +38,7 @@ start_ssl_server() ->
 
 %% Accepts an incoming TCP connection on the listener and upgrades
 %% to SSL via server-side handshake. Returns {ok, SslSocket}.
-ssl_handshake({socket, TcpSock}, Cert, Key, CaCerts, Timeout) ->
+ssl_handshake(TcpSocket, Cert, Key, CaCerts, Timeout) ->
   SslOpts = [
     {cert, Cert},
     {key, {'RSAPrivateKey', Key}},
@@ -46,8 +46,8 @@ ssl_handshake({socket, TcpSock}, Cert, Key, CaCerts, Timeout) ->
     {verify, verify_none}
   ],
 
-  case ssl:handshake(TcpSock, SslOpts, Timeout) of
-    {ok, SslSock} -> {ok, {socket, SslSock}};
-    {ok, SslSock, _Ext} -> {ok, {socket, SslSock}};
+  case ssl:handshake(TcpSocket, SslOpts, Timeout) of
+    {ok, SslSocket} -> {ok, SslSocket};
+    {ok, SslSocket, _Ext} -> {ok, SslSocket};
     {error, Reason} -> {error, Reason}
   end.

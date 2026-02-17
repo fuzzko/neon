@@ -1,5 +1,4 @@
 import gleam/erlang/process
-import lumen
 import lumen/inet
 import lumen/tcp.{type Tcp}
 
@@ -7,31 +6,41 @@ import lumen/tcp.{type Tcp}
 
 const host = "127.0.0.1"
 
-pub fn connect_test() {
-  let assert Ok(tcp_port) =
-    tcp.ListenOptions(port: 0, ip_address: lumen.Ipv4Address(127, 0, 0, 1))
+pub fn port_test() {
+  let assert Ok(tcp) =
+    tcp.ListenOptions(port: 0, ip_address: inet.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
-  let assert Ok(port_num) = inet.port(tcp_port)
+  let assert Ok(port_num) = tcp.port(tcp)
 
-  let assert Ok(_socket) = tcp.connect(host, port_num, lumen.Ipv4)
+  assert port_num > 0
+}
+
+pub fn connect_test() {
+  let assert Ok(tcp_port) =
+    tcp.ListenOptions(port: 0, ip_address: inet.Ipv4Address(127, 0, 0, 1))
+    |> tcp.listen
+
+  let assert Ok(port_num) = tcp.port(tcp_port)
+
+  let assert Ok(_socket) = tcp.connect(host, port_num, inet.Ipv4)
 }
 
 pub fn connect_ipv6_test() {
   let assert Ok(tcp_port) =
     tcp.ListenOptions(
       port: 0,
-      ip_address: lumen.Ipv6Address(0, 0, 0, 0, 0, 0, 0, 1),
+      ip_address: inet.Ipv6Address(0, 0, 0, 0, 0, 0, 0, 1),
     )
     |> tcp.listen
 
-  let assert Ok(port_num) = inet.port(tcp_port)
+  let assert Ok(port_num) = tcp.port(tcp_port)
 
-  let assert Ok(_socket) = tcp.connect("::1", port_num, lumen.Ipv6)
+  let assert Ok(_socket) = tcp.connect("::1", port_num, inet.Ipv6)
 }
 
 pub fn connect_error_test() {
-  let assert Error(lumen.Econnrefused) = tcp.connect(host, 1, lumen.Ipv4)
+  let assert Error(inet.Econnrefused) = tcp.connect(host, 1, inet.Ipv4)
 }
 
 // ---------- send ---------- //
@@ -68,7 +77,7 @@ pub fn receive_timeout_test() {
   let #(socket, _listener) = connected_pair()
 
   // No data is sent, so receive should time out
-  let assert Error(lumen.Timeout) = tcp.receive(socket, 1, 100)
+  let assert Error(inet.Timeout) = tcp.receive(socket, 1, 100)
 
   let assert Ok(_) = tcp.shutdown(socket)
 }
@@ -113,13 +122,13 @@ pub fn shutdown_closed_test() {
 
 // Creates a TCP listener on an OS-assigned port, connects a client socket
 // to it, and returns the client socket along with the listener port
-fn connected_pair() -> #(lumen.Socket(Tcp), lumen.Socket(Tcp)) {
+fn connected_pair() -> #(Tcp, Tcp) {
   let assert Ok(listener) =
-    tcp.ListenOptions(port: 0, ip_address: lumen.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port: 0, ip_address: inet.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
-  let assert Ok(port_num) = inet.port(listener)
-  let assert Ok(socket) = tcp.connect(host, port_num, lumen.Ipv4)
+  let assert Ok(port_num) = tcp.port(listener)
+  let assert Ok(socket) = tcp.connect(host, port_num, inet.Ipv4)
 
   #(socket, listener)
 }

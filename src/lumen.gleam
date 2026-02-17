@@ -1,182 +1,60 @@
+import gleam/result
+import lumen/inet
+import lumen/ssl.{type Ssl}
+import lumen/tcp.{type Tcp}
+
 pub opaque type Socket(a) {
   Socket(inner: a)
 }
 
-pub fn socket(inner: a) -> Socket(a) {
-  Socket(inner:)
+pub fn connect(
+  host: String,
+  port: Int,
+  ip_version: inet.IpVersion,
+) -> Result(Socket(Tcp), inet.PosixError) {
+  host
+  |> tcp.connect(port, ip_version)
+  |> result.map(Socket)
 }
 
-pub type IpAddress {
-  Ipv4Address(Int, Int, Int, Int)
-  Ipv6Address(Int, Int, Int, Int, Int, Int, Int, Int)
+pub fn upgrade(
+  socket: Socket(Tcp),
+  host: String,
+  verified: Bool,
+) -> Result(Socket(Ssl), inet.PosixError) {
+  ssl.upgrade(socket.inner, host, verified)
+  |> result.map(Socket)
 }
 
-pub type IpVersion {
-  Ipv4
-  Ipv6
+pub fn send(
+  socket: Socket(a),
+  payload: BitArray,
+  handle_send: fn(a, BitArray) -> Result(a, inet.PosixError),
+) -> Result(Socket(a), inet.PosixError) {
+  handle_send(socket.inner, payload)
+  |> result.map(Socket)
 }
 
-// https://www.erlang.org/doc/apps/kernel/inet.html#module-posix-error-codes
-pub type PosixError {
-  Closed
-  Timeout
-  Eaddrinuse
-  Eaddrnotavail
-  Eafnosupport
-  Ealready
-  Econnaborted
-  Econnrefused
-  Econnreset
-  Edestaddrreq
-  Ehostdown
-  Ehostunreach
-  Einprogress
-  Eisconn
-  Emsgsize
-  Enetdown
-  Enetunreach
-  Enopkg
-  Enoprotoopt
-  Enotconn
-  Enotty
-  Enotsock
-  Eproto
-  Eprotonosupport
-  Eprototype
-  Esocktnosupport
-  Etimedout
-  Ewouldblock
-  Exbadport
-  Exbadseq
-  Nxdomain
-  Eacces
-  Eagain
-  Ebadf
-  Ebadmsg
-  Ebusy
-  Edeadlk
-  Edeadlock
-  Edquot
-  Eexist
-  Efault
-  Efbig
-  Eftype
-  Eintr
-  Einval
-  Eio
-  Eisdir
-  Eloop
-  Emfile
-  Emlink
-  Emultihop
-  Enametoolong
-  Enfile
-  Enobufs
-  Enodev
-  Enolck
-  Enolink
-  Enoent
-  Enomem
-  Enospc
-  Enosr
-  Enostr
-  Enosys
-  Enotblk
-  Enotdir
-  Enotsup
-  Enxio
-  Eopnotsupp
-  Eoverflow
-  Eperm
-  Epipe
-  Erange
-  Erofs
-  Espipe
-  Esrch
-  Estale
-  Etxtbsy
-  Exdev
+pub fn receive(
+  socket: Socket(a),
+  length: Int,
+  timeout: Int,
+  handle_receive: fn(a, Int, Int) -> Result(BitArray, inet.PosixError),
+) -> Result(BitArray, inet.PosixError) {
+  handle_receive(socket.inner, length, timeout)
 }
 
-pub fn posix_error_to_string(code: PosixError) -> String {
-  case code {
-    Closed -> "closed"
-    Timeout -> "timeout"
-    Eaddrinuse -> "eaddrinuse"
-    Eaddrnotavail -> "eaddrnotavail"
-    Eafnosupport -> "eafnosupport"
-    Ealready -> "ealready"
-    Econnaborted -> "econnaborted"
-    Econnrefused -> "econnrefused"
-    Econnreset -> "econnreset"
-    Edestaddrreq -> "edestaddrreq"
-    Ehostdown -> "ehostdown"
-    Ehostunreach -> "ehostunreach"
-    Einprogress -> "einprogress"
-    Eisconn -> "eisconn"
-    Emsgsize -> "emsgsize"
-    Enetdown -> "enetdown"
-    Enetunreach -> "enetunreach"
-    Enopkg -> "enopkg"
-    Enoprotoopt -> "enoprotoopt"
-    Enotconn -> "enotconn"
-    Enotty -> "enotty"
-    Enotsock -> "enotsock"
-    Eproto -> "eproto"
-    Eprotonosupport -> "eprotonosupport"
-    Eprototype -> "eprototype"
-    Esocktnosupport -> "esocktnosupport"
-    Etimedout -> "etimedout"
-    Ewouldblock -> "ewouldblock"
-    Exbadport -> "exbadport"
-    Exbadseq -> "exbadseq"
-    Nxdomain -> "nxdomain"
-    Eacces -> "eacces"
-    Eagain -> "eagain"
-    Ebadf -> "ebadf"
-    Ebadmsg -> "ebadmsg"
-    Ebusy -> "ebusy"
-    Edeadlk -> "edeadlk"
-    Edeadlock -> "edeadlock"
-    Edquot -> "edquot"
-    Eexist -> "eexist"
-    Efault -> "efault"
-    Efbig -> "efbig"
-    Eftype -> "eftype"
-    Eintr -> "eintr"
-    Einval -> "einval"
-    Eio -> "eio"
-    Eisdir -> "eisdir"
-    Eloop -> "eloop"
-    Emfile -> "emfile"
-    Emlink -> "emlink"
-    Emultihop -> "emultihop"
-    Enametoolong -> "enametoolong"
-    Enfile -> "enfile"
-    Enobufs -> "enobufs"
-    Enodev -> "enodev"
-    Enolck -> "enolck"
-    Enolink -> "enolink"
-    Enoent -> "enoent"
-    Enomem -> "enomem"
-    Enospc -> "enospc"
-    Enosr -> "enosr"
-    Enostr -> "enostr"
-    Enosys -> "enosys"
-    Enotblk -> "enotblk"
-    Enotdir -> "enotdir"
-    Enotsup -> "enotsup"
-    Enxio -> "enxio"
-    Eopnotsupp -> "eopnotsupp"
-    Eoverflow -> "eoverflow"
-    Eperm -> "eperm"
-    Epipe -> "epipe"
-    Erange -> "erange"
-    Erofs -> "erofs"
-    Espipe -> "espipe"
-    Esrch -> "esrch"
-    Estale -> "estale"
-    Etxtbsy -> "etxtbsy"
-    Exdev -> "exdev"
-  }
+pub fn receive_forever(
+  socket: Socket(a),
+  length: Int,
+  handle_receive_forever: fn(a, Int) -> Result(BitArray, inet.PosixError),
+) -> Result(BitArray, inet.PosixError) {
+  handle_receive_forever(socket.inner, length)
+}
+
+pub fn shutdown(
+  socket: Socket(a),
+  handle_shutdown: fn(a) -> Result(Nil, inet.PosixError),
+) -> Result(Nil, inet.PosixError) {
+  handle_shutdown(socket.inner)
 }
