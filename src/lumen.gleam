@@ -18,7 +18,7 @@ pub fn connect(
   |> result.map(TcpSocket)
 }
 
-pub fn upgrade(
+pub fn to_ssl(
   socket: Socket,
   host: String,
   verified: Bool,

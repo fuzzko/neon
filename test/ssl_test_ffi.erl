@@ -28,8 +28,6 @@ pkix_test_data() ->
 
   {Cert, Key, CaCerts}.
 
-%% Generates in-memory test certificates, starts a TCP listener,
-%% and returns {ok, Listener} for use as a test SSL server.
 start_ssl_server() ->
   application:ensure_all_started(ssl),
   application:ensure_all_started(public_key),
