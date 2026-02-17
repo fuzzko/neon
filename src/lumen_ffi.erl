@@ -15,7 +15,13 @@
   ssl_recv_forever/2,
   ssl_recv/3,
   ssl_shutdown/1,
-  ssl_close/1
+  ssl_close/1,
+  udp_open/1,
+  udp_connect/3,
+  udp_send/2,
+  udp_receive/3,
+  udp_receive_forever/2,
+  udp_close/1
 ]).
 
 %%% inet %%%
@@ -124,7 +130,44 @@ ssl_send(SslSocket, Packet) ->
   Sent = ssl:send(SslSocket, Packet),
   normalise(Sent).
 
+%%% Udp %%%
+
+udp_open(Port) ->
+  normalise(gen_udp:open(Port, [binary, {active, false}])).
+
+udp_connect(UdpSocket, Address, Port) ->
+  Resp = gen_udp:connect(UdpSocket, Address, Port),
+  normalise(Resp).
+
+udp_send(UdpSocket, Packet) ->
+  Resp = gen_udp:send(UdpSocket, Packet),
+  normalise(Resp).
+
+udp_receive(UdpSocket, Length, Timeout) ->
+  Resp = gen_udp:recv(UdpSocket, Length, Timeout),
+  normalise_udp_recv(Resp).
+
+udp_receive_forever(UdpSocket, Length) ->
+  Resp = gen_udp:recv(UdpSocket, Length),
+  normalise_udp_recv(Resp).
+
+udp_close(UdpSocket) ->
+  Resp = gen_udp:close(UdpSocket),
+  normalise(Resp).
+
 %%% Normalise results %%%
+
+normalise_udp_recv({ok, {Address, Port, _, Packet}}) ->
+  {ok, {normalise_ip_address(Address), Port, Packet}};
+normalise_udp_recv({ok, {Address, Port, Packet}}) ->
+  {ok, {normalise_ip_address(Address), Port, Packet}};
+normalise_udp_recv({error, timeout}) -> {error, timeout};
+normalise_udp_recv({error, _} = E) -> E.
+
+normalise_ip_address({A, B, C, D}) ->
+  {ipv4_address, A, B, C, D};
+normalise_ip_address({A, B, C, D, E, F, G, H}) ->
+  {ipv6_address, A, B, C, D, E, F, G, H}.
 
 normalise(ok) -> {ok, nil};
 normalise({ok, T}) -> {ok, T};
