@@ -1,4 +1,10 @@
-pub type Socket
+pub opaque type Socket(a) {
+  Socket(inner: a)
+}
+
+pub fn socket(inner: a) -> Socket(a) {
+  Socket(inner:)
+}
 
 pub type IpVersion {
   Ipv4

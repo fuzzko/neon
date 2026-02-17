@@ -1,14 +1,15 @@
 import gleam/erlang/process
 import lumen
-import lumen/ssl
-import lumen/tcp
+import lumen/inet
+import lumen/ssl.{type Ssl}
+import lumen/tcp.{type Tcp}
 
 const host = "127.0.0.1"
 
 // ---------- upgrade ---------- //
 
 pub fn upgrade_test() {
-  let data = pkix_test_data()
+  let #(cert, rsa_pk, ca_certs) = pkix_test_data()
 
   let #(client_tcp, server_ssl) = tcp_connected_pair()
 
@@ -19,13 +20,7 @@ pub fn upgrade_test() {
       let assert Ok(listener) = tcp.accept(server_ssl, 5000)
 
       let assert Ok(_server_ssl) =
-        ssl_handshake(
-          listener,
-          data.cert,
-          data.rsa_private_key,
-          data.ca_certs,
-          5000,
-        )
+        ssl_handshake(listener, cert, rsa_pk, ca_certs, 5000)
       process.send(test_subject, Nil)
     })
 
@@ -36,7 +31,7 @@ pub fn upgrade_test() {
 
 pub fn upgrade_error_test() {
   let assert Ok(listener) = tcp.listen(0)
-  let assert Ok(port_num) = inet_port(listener)
+  let assert Ok(port_num) = inet.port(listener)
 
   let test_subject = process.new_subject()
   let _pid =
@@ -67,7 +62,7 @@ pub fn send_closed_test() {
   let #(ssl_socket, _server_ssl) = ssl_connected_pair()
 
   let assert Ok(_) = ssl.shutdown(ssl_socket)
-  let assert Error(lumen.Closed) = ssl.send(ssl_socket, <<"hello":utf8>>)
+  let assert Error(_err) = ssl.send(ssl_socket, <<"hello":utf8>>)
 }
 
 // ---------- receive ---------- //
@@ -125,34 +120,28 @@ pub fn shutdown_closed_test() {
 
 // ---------- helpers ---------- //
 
-fn tcp_connected_pair() -> #(lumen.Socket, lumen.Socket) {
+fn tcp_connected_pair() -> #(lumen.Socket(Tcp), lumen.Socket(Tcp)) {
   start_ssl_server()
 
   let assert Ok(server_ssl) = tcp.listen(0)
 
-  let assert Ok(port) = inet_port(server_ssl)
+  let assert Ok(port) = inet.port(server_ssl)
 
   let assert Ok(client_tcp) = tcp.connect(host, port, lumen.Ipv4)
 
   #(client_tcp, server_ssl)
 }
 
-fn ssl_connected_pair() -> #(lumen.Socket, lumen.Socket) {
+fn ssl_connected_pair() -> #(lumen.Socket(Ssl), lumen.Socket(Ssl)) {
   let #(client_tcp, server_ssl) = tcp_connected_pair()
   let test_subject = process.new_subject()
-  let data = pkix_test_data()
+  let #(cert, rsa_pk, ca_certs) = pkix_test_data()
 
   let _pid =
     process.spawn(fn() {
       let assert Ok(listener) = tcp.accept(server_ssl, 5000)
       let assert Ok(server_ssl) =
-        ssl_handshake(
-          listener,
-          data.cert,
-          data.rsa_private_key,
-          data.ca_certs,
-          5000,
-        )
+        ssl_handshake(listener, cert, rsa_pk, ca_certs, 5000)
 
       process.send(test_subject, server_ssl)
 
@@ -167,28 +156,18 @@ fn ssl_connected_pair() -> #(lumen.Socket, lumen.Socket) {
 
 // ---------- erlang FFI for test infrastructure ---------- //
 
-pub type PkixTestData {
-  PkixTextData(
-    cert: BitArray,
-    rsa_private_key: BitArray,
-    ca_certs: List(BitArray),
-  )
-}
-
+// cert, rsa_private_key, ca_certs
 @external(erlang, "ssl_test_ffi", "pkix_test_data")
-fn pkix_test_data() -> PkixTestData
+fn pkix_test_data() -> #(BitArray, BitArray, List(BitArray))
 
 @external(erlang, "ssl_test_ffi", "start_ssl_server")
 fn start_ssl_server() -> Nil
 
 @external(erlang, "ssl_test_ffi", "ssl_handshake")
 fn ssl_handshake(
-  listener: lumen.Socket,
+  listener: lumen.Socket(Tcp),
   cert: BitArray,
   rsa_private_key: BitArray,
   ca_certs: List(BitArray),
   timeout: Int,
-) -> Result(lumen.Socket, lumen.PosixError)
-
-@external(erlang, "inet", "port")
-fn inet_port(port: lumen.Socket) -> Result(Int, Nil)
+) -> Result(lumen.Socket(Ssl), lumen.PosixError)

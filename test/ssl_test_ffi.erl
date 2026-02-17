@@ -26,7 +26,7 @@ pkix_test_data() ->
   {'RSAPrivateKey', Key} = proplists:get_value(key, ServerConf),
   CaCerts = proplists:get_value(cacerts, ServerConf),
 
-  {pkix_test_data, Cert, Key, CaCerts}.
+  {Cert, Key, CaCerts}.
 
 %% Generates in-memory test certificates, starts a TCP listener,
 %% and returns {ok, Listener} for use as a test SSL server.
@@ -38,7 +38,7 @@ start_ssl_server() ->
 
 %% Accepts an incoming TCP connection on the listener and upgrades
 %% to SSL via server-side handshake. Returns {ok, SslSocket}.
-ssl_handshake(TcpSock, Cert, Key, CaCerts, Timeout) ->
+ssl_handshake({socket, TcpSock}, Cert, Key, CaCerts, Timeout) ->
   SslOpts = [
     {cert, Cert},
     {key, {'RSAPrivateKey', Key}},
@@ -47,7 +47,7 @@ ssl_handshake(TcpSock, Cert, Key, CaCerts, Timeout) ->
   ],
 
   case ssl:handshake(TcpSock, SslOpts, Timeout) of
-    {ok, SslSock} -> {ok, SslSock};
-    {ok, SslSock, _Ext} -> {ok, SslSock};
+    {ok, SslSock} -> {ok, {socket, SslSock}};
+    {ok, SslSock, _Ext} -> {ok, {socket, SslSock}};
     {error, Reason} -> {error, Reason}
   end.
