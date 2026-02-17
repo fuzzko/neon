@@ -5,7 +5,6 @@
   tcp_accept/2,
   tcp_close/1,
   tcp_listen/1,
-  tcp_listen_ipv6/1,
   tcp_connect/3,
   tcp_send/2,
   tcp_recv_forever/2,
@@ -30,10 +29,7 @@ inet_port({socket, Socket}) ->
 %%% tcp %%%
 
 tcp_connect(Host, Port, IpVersion) ->
-  Inet = case IpVersion of
-    ipv4 -> inet;
-    ipv6 -> inet6
-  end,
+  Inet = ip_version_to_inet(IpVersion),
 
   Resp = gen_tcp:connect(Host, Port, [binary, {packet, raw}, {active, false}, Inet]),
   normalise_socket(Resp).
@@ -54,24 +50,16 @@ tcp_send({socket, TcpSocket}, Packet) ->
     Sent = gen_tcp:send(TcpSocket, Packet),
     normalise(Sent).
 
-tcp_listen(Port) ->
+tcp_listen({listen_options, Port, IpAddress}) ->
+  {Inet, Address} = ip_address_and_version(IpAddress),
+
   Options = [
     binary,
-    {ip, {127,0,0,1}},
-    {packet, raw},
-    {active, false},
-    {reuseaddr, true}
-  ],
-  Resp = gen_tcp:listen(Port, Options),
-  normalise_socket(Resp).
-
-tcp_listen_ipv6(Port) ->
-  Options = [
-    {ip, {0,0,0,0,0,0,0,1}},
+    {ip, Address},
     {packet, raw},
     {active, false},
     {reuseaddr, true},
-    inet6
+    Inet
   ],
   Resp = gen_tcp:listen(Port, Options),
   normalise_socket(Resp).
@@ -85,6 +73,14 @@ tcp_close({socket, TcpSocket}) ->
     ok -> {ok, nil};
     _ -> {error, nil}
   end.
+
+ip_version_to_inet(ipv6) -> inet6;
+ip_version_to_inet(ipv4) -> inet.
+
+ip_address_and_version({ipv4_address, A, B, C, D}) ->
+  {inet, {A, B, C, D}};
+ip_address_and_version({ipv6_address, A, B, C, D, E, F, G, H}) ->
+  {inet6, {A, B, C, D, E, F, G, H}}.
 
 %%% ssl %%%
 

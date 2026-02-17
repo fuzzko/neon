@@ -8,14 +8,23 @@ import lumen/tcp.{type Tcp}
 const host = "127.0.0.1"
 
 pub fn connect_test() {
-  let assert Ok(tcp_port) = tcp.listen(0)
+  let assert Ok(tcp_port) =
+    tcp.ListenOptions(port: 0, ip_address: lumen.Ipv4Address(127, 0, 0, 1))
+    |> tcp.listen
+
   let assert Ok(port_num) = inet.port(tcp_port)
 
   let assert Ok(_socket) = tcp.connect(host, port_num, lumen.Ipv4)
 }
 
 pub fn connect_ipv6_test() {
-  let assert Ok(tcp_port) = tcp.listen_ipv6(0)
+  let assert Ok(tcp_port) =
+    tcp.ListenOptions(
+      port: 0,
+      ip_address: lumen.Ipv6Address(0, 0, 0, 0, 0, 0, 0, 1),
+    )
+    |> tcp.listen
+
   let assert Ok(port_num) = inet.port(tcp_port)
 
   let assert Ok(_socket) = tcp.connect("::1", port_num, lumen.Ipv6)
@@ -105,7 +114,10 @@ pub fn shutdown_closed_test() {
 // Creates a TCP listener on an OS-assigned port, connects a client socket
 // to it, and returns the client socket along with the listener port
 fn connected_pair() -> #(lumen.Socket(Tcp), lumen.Socket(Tcp)) {
-  let assert Ok(listener) = tcp.listen(0)
+  let assert Ok(listener) =
+    tcp.ListenOptions(port: 0, ip_address: lumen.Ipv4Address(127, 0, 0, 1))
+    |> tcp.listen
+
   let assert Ok(port_num) = inet.port(listener)
   let assert Ok(socket) = tcp.connect(host, port_num, lumen.Ipv4)
 

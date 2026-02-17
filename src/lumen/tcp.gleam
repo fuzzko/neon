@@ -41,12 +41,14 @@ pub fn shutdown(socket: lumen.Socket(Tcp)) -> Result(Nil, lumen.PosixError) {
   tcp_shutdown_(socket)
 }
 
-pub fn listen(port: Int) -> Result(lumen.Socket(Tcp), lumen.PosixError) {
-  tcp_listen_(port)
+pub type ListenOptions {
+  ListenOptions(port: Int, ip_address: lumen.IpAddress)
 }
 
-pub fn listen_ipv6(port: Int) -> Result(lumen.Socket(Tcp), lumen.PosixError) {
-  tcp_listen_ipv6_(port)
+pub fn listen(
+  opts: ListenOptions,
+) -> Result(lumen.Socket(Tcp), lumen.PosixError) {
+  tcp_listen_(opts)
 }
 
 pub fn accept(
@@ -90,10 +92,9 @@ fn tcp_send_(
 fn tcp_shutdown_(socket: lumen.Socket(Tcp)) -> Result(Nil, lumen.PosixError)
 
 @external(erlang, "lumen_ffi", "tcp_listen")
-fn tcp_listen_(port: Int) -> Result(lumen.Socket(Tcp), lumen.PosixError)
-
-@external(erlang, "lumen_ffi", "tcp_listen_ipv6")
-fn tcp_listen_ipv6_(port: Int) -> Result(lumen.Socket(Tcp), lumen.PosixError)
+fn tcp_listen_(
+  opts: ListenOptions,
+) -> Result(lumen.Socket(Tcp), lumen.PosixError)
 
 @external(erlang, "lumen_ffi", "tcp_accept")
 fn tcp_accept_(

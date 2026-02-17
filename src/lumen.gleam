@@ -6,6 +6,11 @@ pub fn socket(inner: a) -> Socket(a) {
   Socket(inner:)
 }
 
+pub type IpAddress {
+  Ipv4Address(Int, Int, Int, Int)
+  Ipv6Address(Int, Int, Int, Int, Int, Int, Int, Int)
+}
+
 pub type IpVersion {
   Ipv4
   Ipv6

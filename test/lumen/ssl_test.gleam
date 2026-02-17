@@ -30,7 +30,10 @@ pub fn upgrade_test() {
 }
 
 pub fn upgrade_error_test() {
-  let assert Ok(listener) = tcp.listen(0)
+  let assert Ok(listener) =
+    tcp.ListenOptions(port: 0, ip_address: lumen.Ipv4Address(127, 0, 0, 1))
+    |> tcp.listen
+
   let assert Ok(port_num) = inet.port(listener)
 
   let test_subject = process.new_subject()
@@ -123,7 +126,9 @@ pub fn shutdown_closed_test() {
 fn tcp_connected_pair() -> #(lumen.Socket(Tcp), lumen.Socket(Tcp)) {
   start_ssl_server()
 
-  let assert Ok(server_ssl) = tcp.listen(0)
+  let assert Ok(server_ssl) =
+    tcp.ListenOptions(port: 0, ip_address: lumen.Ipv4Address(127, 0, 0, 1))
+    |> tcp.listen
 
   let assert Ok(port) = inet.port(server_ssl)
 
