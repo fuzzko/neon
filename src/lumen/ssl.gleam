@@ -40,10 +40,6 @@ pub fn close(socket: Ssl) -> Result(Nil, inet.PosixError) {
   ssl_close_(socket)
 }
 
-pub fn port(socket: Tcp) -> Result(Int, Nil) {
-  inet_port_(socket)
-}
-
 @external(erlang, "lumen_ffi", "ssl_connect")
 fn ssl_upgrade_(
   socket: Tcp,
@@ -72,6 +68,3 @@ fn ssl_shutdown_(socket: Ssl) -> Result(Nil, inet.PosixError)
 
 @external(erlang, "lumen_ffi", "ssl_close")
 fn ssl_close_(socket: Ssl) -> Result(Nil, inet.PosixError)
-
-@external(erlang, "lumen_ffi", "inet_port")
-fn inet_port_(socket: Tcp) -> Result(Int, Nil)

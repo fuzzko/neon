@@ -33,7 +33,7 @@ pub fn upgrade_error_test() {
     tcp.ListenOptions(port: 0, ip_address: inet.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
-  let assert Ok(port_num) = ssl.port(listener)
+  let assert Ok(port_num) = tcp.port(listener)
 
   let test_subject = process.new_subject()
   let _pid =
@@ -129,7 +129,7 @@ fn tcp_connected_pair() -> #(Tcp, Tcp) {
     tcp.ListenOptions(port: 0, ip_address: inet.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
-  let assert Ok(port) = ssl.port(server_ssl)
+  let assert Ok(port) = tcp.port(server_ssl)
 
   let assert Ok(client_tcp) = tcp.connect(host, port, inet.Ipv4)
 

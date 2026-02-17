@@ -75,7 +75,7 @@ fn udp_send_(socket: Udp, payload: BitArray) -> Result(Nil, inet.PosixError)
 @external(erlang, "lumen_ffi", "udp_receive")
 fn udp_receive_(
   socket: Udp,
-  length: int,
+  length: Int,
   timeout: Int,
 ) -> Result(#(inet.IpAddress, Int, BitArray), inet.PosixError)
 

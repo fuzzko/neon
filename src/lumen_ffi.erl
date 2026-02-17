@@ -98,7 +98,7 @@ ssl_connect(TcpSocket, Host, Verified) ->
     true -> [
       {verify, verify_peer},
       {cacerts, public_key:cacerts_get()},
-      {server_name_idication, Host},
+      {server_name_indication, binary_to_list(Host)},
       {customize_hostname_check, [
         {match_fun, public_key:pkix_verify_hostname_match_fun(https)}
       ]
