@@ -1,5 +1,5 @@
 import gleam/erlang/process
-import lumen/inet
+import lumen/net
 import lumen/udp
 
 // ---------- connect ---------- //
@@ -55,7 +55,7 @@ pub fn receive_test() {
   let assert Ok(Nil) = udp.send(sender, <<"hello":utf8>>)
 
   let assert Ok(udp.ReceiveData(
-    ip_address: inet.Ipv4Address(127, 0, 0, 1),
+    ip_address: net.Ipv4Address(127, 0, 0, 1),
     port: _sender_port,
     payload: <<"hello":utf8>>,
   )) = udp.receive(receiver, 0, 1000)
@@ -65,7 +65,7 @@ pub fn receive_timeout_test() {
   let assert Ok(sock) = udp.open(0)
 
   // No data is sent, so receive should time out
-  let assert Error(inet.Timeout) = udp.receive(sock, 0, 100)
+  let assert Error(net.Timeout) = udp.receive(sock, 0, 100)
 }
 
 pub fn receive_forever_test() {
@@ -83,7 +83,7 @@ pub fn receive_forever_test() {
     })
 
   let assert Ok(udp.ReceiveData(
-    ip_address: inet.Ipv4Address(127, 0, 0, 1),
+    ip_address: net.Ipv4Address(127, 0, 0, 1),
     port: _sender_port,
     payload: <<"world":utf8>>,
   )) = udp.receive_forever(receiver, 0)

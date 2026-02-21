@@ -1,7 +1,7 @@
 import gleam/erlang/process
 import gleeunit
 import lumen
-import lumen/inet
+import lumen/net
 import lumen/ssl.{type Ssl}
 import lumen/tcp.{type Tcp}
 
@@ -13,17 +13,17 @@ pub fn main() -> Nil {
 
 pub fn connect_test() {
   let assert Ok(tcp_port) =
-    tcp.ListenOptions(port: 0, ip_address: inet.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
   let assert Ok(port_num) = tcp.port(tcp_port)
 
-  let assert Ok(_socket) = lumen.connect(host, port_num, inet.Ipv4)
+  let assert Ok(_socket) = lumen.connect(host, port_num, net.Ipv4)
 }
 
 pub fn port_test() {
   let assert Ok(tcp) =
-    tcp.ListenOptions(port: 0, ip_address: inet.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
   let assert Ok(port_num) = tcp.port(tcp)
@@ -37,7 +37,7 @@ pub fn to_ssl_test() {
 
   // Create a TCP listener
   let assert Ok(listener) =
-    tcp.ListenOptions(port: 0, ip_address: inet.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
   let assert Ok(port_num) = tcp.port(listener)
 
@@ -53,7 +53,7 @@ pub fn to_ssl_test() {
     })
 
   // Connect through the lumen API and upgrade to SSL
-  let assert Ok(socket) = lumen.connect(host, port_num, inet.Ipv4)
+  let assert Ok(socket) = lumen.connect(host, port_num, net.Ipv4)
   let assert Ok(_ssl_socket) = lumen.to_ssl(socket, host, False)
 
   let assert Ok(_) = process.receive(test_subject, 5000)
@@ -74,4 +74,4 @@ fn ssl_handshake(
   rsa_private_key: BitArray,
   ca_certs: List(BitArray),
   timeout: Int,
-) -> Result(Ssl, inet.PosixError)
+) -> Result(Ssl, net.PosixError)

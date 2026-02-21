@@ -1,5 +1,5 @@
 import gleam/erlang/process
-import lumen/inet
+import lumen/net
 import lumen/ssl.{type Ssl}
 import lumen/tcp.{type Tcp}
 
@@ -30,7 +30,7 @@ pub fn upgrade_test() {
 
 pub fn upgrade_error_test() {
   let assert Ok(listener) =
-    tcp.ListenOptions(port: 0, ip_address: inet.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
   let assert Ok(port_num) = tcp.port(listener)
@@ -44,9 +44,9 @@ pub fn upgrade_error_test() {
       process.send(test_subject, Nil)
     })
 
-  let assert Ok(socket) = tcp.connect(host, port_num, inet.Ipv4)
+  let assert Ok(socket) = tcp.connect(host, port_num, net.Ipv4)
 
-  let assert Error(inet.Closed) = ssl.upgrade(socket, "127.0.0.1", False)
+  let assert Error(net.Closed) = ssl.upgrade(socket, "127.0.0.1", False)
 
   let assert Ok(_) = process.receive(test_subject, 5000)
 }
@@ -82,7 +82,7 @@ pub fn receive_timeout_test() {
   let #(ssl_socket, server_ssl) = ssl_connected_pair()
 
   // No data is sent, so receive should time out
-  let assert Error(inet.Timeout) = ssl.receive(ssl_socket, 1, 100)
+  let assert Error(net.Timeout) = ssl.receive(ssl_socket, 1, 100)
 
   let _ = ssl.close(server_ssl)
 }
@@ -117,7 +117,7 @@ pub fn shutdown_closed_test() {
 
   process.sleep(50)
 
-  let assert Error(inet.Closed) = ssl.shutdown(ssl_socket)
+  let assert Error(net.Closed) = ssl.shutdown(ssl_socket)
 }
 
 // ---------- helpers ---------- //
@@ -126,12 +126,12 @@ fn tcp_connected_pair() -> #(Tcp, Tcp) {
   start_ssl_server()
 
   let assert Ok(server_ssl) =
-    tcp.ListenOptions(port: 0, ip_address: inet.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
   let assert Ok(port) = tcp.port(server_ssl)
 
-  let assert Ok(client_tcp) = tcp.connect(host, port, inet.Ipv4)
+  let assert Ok(client_tcp) = tcp.connect(host, port, net.Ipv4)
 
   #(client_tcp, server_ssl)
 }
@@ -174,4 +174,4 @@ fn ssl_handshake(
   rsa_private_key: BitArray,
   ca_certs: List(BitArray),
   timeout: Int,
-) -> Result(Ssl, inet.PosixError)
+) -> Result(Ssl, net.PosixError)

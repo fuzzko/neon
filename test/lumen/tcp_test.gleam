@@ -1,5 +1,5 @@
 import gleam/erlang/process
-import lumen/inet
+import lumen/net
 import lumen/tcp.{type Tcp}
 
 // ---------- connect ---------- //
@@ -8,7 +8,7 @@ const host = "127.0.0.1"
 
 pub fn port_test() {
   let assert Ok(tcp) =
-    tcp.ListenOptions(port: 0, ip_address: inet.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
   let assert Ok(port_num) = tcp.port(tcp)
@@ -18,29 +18,29 @@ pub fn port_test() {
 
 pub fn connect_test() {
   let assert Ok(tcp_port) =
-    tcp.ListenOptions(port: 0, ip_address: inet.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
   let assert Ok(port_num) = tcp.port(tcp_port)
 
-  let assert Ok(_socket) = tcp.connect(host, port_num, inet.Ipv4)
+  let assert Ok(_socket) = tcp.connect(host, port_num, net.Ipv4)
 }
 
 pub fn connect_ipv6_test() {
   let assert Ok(tcp_port) =
     tcp.ListenOptions(
       port: 0,
-      ip_address: inet.Ipv6Address(0, 0, 0, 0, 0, 0, 0, 1),
+      ip_address: net.Ipv6Address(0, 0, 0, 0, 0, 0, 0, 1),
     )
     |> tcp.listen
 
   let assert Ok(port_num) = tcp.port(tcp_port)
 
-  let assert Ok(_socket) = tcp.connect("::1", port_num, inet.Ipv6)
+  let assert Ok(_socket) = tcp.connect("::1", port_num, net.Ipv6)
 }
 
 pub fn connect_error_test() {
-  let assert Error(inet.Econnrefused) = tcp.connect(host, 1, inet.Ipv4)
+  let assert Error(net.Econnrefused) = tcp.connect(host, 1, net.Ipv4)
 }
 
 // ---------- send ---------- //
@@ -77,7 +77,7 @@ pub fn receive_timeout_test() {
   let #(socket, _listener) = connected_pair()
 
   // No data is sent, so receive should time out
-  let assert Error(inet.Timeout) = tcp.receive(socket, 1, 100)
+  let assert Error(net.Timeout) = tcp.receive(socket, 1, 100)
 
   let assert Ok(_) = tcp.shutdown(socket)
 }
@@ -124,11 +124,11 @@ pub fn shutdown_closed_test() {
 // to it, and returns the client socket along with the listener port
 fn connected_pair() -> #(Tcp, Tcp) {
   let assert Ok(listener) =
-    tcp.ListenOptions(port: 0, ip_address: inet.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
   let assert Ok(port_num) = tcp.port(listener)
-  let assert Ok(socket) = tcp.connect(host, port_num, inet.Ipv4)
+  let assert Ok(socket) = tcp.connect(host, port_num, net.Ipv4)
 
   #(socket, listener)
 }
