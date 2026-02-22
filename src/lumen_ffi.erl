@@ -19,7 +19,6 @@
   udp_connect/3,
   udp_send/2,
   udp_receive/3,
-  udp_receive_forever/2,
   udp_close/1
 ]).
 
@@ -187,11 +186,12 @@ udp_send(UdpSocket, Packet) ->
   normalise_udp(Resp).
 
 udp_receive(UdpSocket, Length, Timeout) ->
-  Resp = gen_udp:recv(UdpSocket, Length, Timeout),
-  normalise_udp(Resp).
+  RecvTimeout = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
 
-udp_receive_forever(UdpSocket, Length) ->
-  Resp = gen_udp:recv(UdpSocket, Length),
+  Resp = gen_udp:recv(UdpSocket, Length, RecvTimeout),
   normalise_udp(Resp).
 
 udp_close(UdpSocket) ->

@@ -32,21 +32,9 @@ pub type ReceiveData {
 pub fn receive(
   socket: Udp,
   length: Int,
-  within timeout: Int,
+  timeout: net.Timeout,
 ) -> Result(ReceiveData, UdpError) {
   udp_receive_(socket, length, timeout)
-  |> result.map(fn(recv_data) {
-    let #(ip_address, port, payload) = recv_data
-
-    ReceiveData(ip_address:, port:, payload:)
-  })
-}
-
-pub fn receive_forever(
-  socket: Udp,
-  length: Int,
-) -> Result(ReceiveData, UdpError) {
-  udp_receive_forever_(socket, length)
   |> result.map(fn(recv_data) {
     let #(ip_address, port, payload) = recv_data
 
@@ -75,13 +63,7 @@ fn udp_send_(socket: Udp, payload: BitArray) -> Result(Nil, UdpError)
 fn udp_receive_(
   socket: Udp,
   length: Int,
-  timeout: Int,
-) -> Result(#(net.IpAddress, Int, BitArray), UdpError)
-
-@external(erlang, "lumen_ffi", "udp_receive_forever")
-fn udp_receive_forever_(
-  socket: Udp,
-  length: Int,
+  timeout: net.Timeout,
 ) -> Result(#(net.IpAddress, Int, BitArray), UdpError)
 
 @external(erlang, "lumen_ffi", "udp_close")

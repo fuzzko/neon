@@ -72,14 +72,14 @@ pub fn receive_test() {
     ip_address: net.Ipv4Address(127, 0, 0, 1),
     port: _sender_port,
     payload: <<"hello":utf8>>,
-  )) = udp.receive(receiver, 0, 1000)
+  )) = udp.receive(receiver, 0, net.Timeout(1000))
 }
 
 pub fn receive_timeout_test() {
   let assert Ok(sock) = udp.open(0)
 
   // No data is sent, so receive should time out
-  let assert Error(udp.Timeout) = udp.receive(sock, 0, 100)
+  let assert Error(udp.Timeout) = udp.receive(sock, 0, net.Timeout(100))
 }
 
 pub fn receive_forever_test() {
@@ -87,7 +87,7 @@ pub fn receive_forever_test() {
   let assert Ok(receiver_port) = udp.port(receiver)
   let test_subject = process.new_subject()
 
-  // Spawn a process that sends data, since receive_forever blocks
+  // Spawn a process that sends data, since receive with Infinity blocks
   let _pid =
     process.spawn(fn() {
       let assert Ok(sender) = udp.open(0)
@@ -100,7 +100,7 @@ pub fn receive_forever_test() {
     ip_address: net.Ipv4Address(127, 0, 0, 1),
     port: _sender_port,
     payload: <<"world":utf8>>,
-  )) = udp.receive_forever(receiver, 0)
+  )) = udp.receive(receiver, 0, net.Infinity)
 
   // Wait for the sender process to finish
   let assert Ok(_) = process.receive(test_subject, 1000)
@@ -111,7 +111,7 @@ pub fn receive_forever_closed_test() {
 
   udp.close(sock)
 
-  let assert Error(udp.Closed) = udp.receive_forever(sock, 0)
+  let assert Error(udp.Closed) = udp.receive(sock, 0, net.Infinity)
 }
 
 // ---------- close ---------- //
@@ -129,5 +129,5 @@ pub fn close_receive_test() {
   udp.close(sock)
 
   // Receiving on a closed socket should fail
-  let assert Error(_) = udp.receive(sock, 0, 100)
+  let assert Error(_) = udp.receive(sock, 0, net.Timeout(100))
 }

@@ -29,7 +29,7 @@ pub fn send(socket: Tcp, payload: BitArray) -> Result(Tcp, TcpError) {
 pub fn receive(
   socket: Tcp,
   length: Int,
-  within timeout: net.Timeout,
+  timeout: net.Timeout,
 ) -> Result(BitArray, TcpError) {
   tcp_receive_(socket, length, timeout)
 }
