@@ -7,18 +7,22 @@ import lumen/tcp.{type Tcp}
 const host = "127.0.0.1"
 
 pub fn port_test() {
+  let assert Ok(port) = net.port(0)
+
   let assert Ok(tcp) =
-    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port:, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
-  let assert Ok(port_num) = tcp.port(tcp)
+  let assert Ok(port) = tcp.port(tcp)
 
-  assert port_num > 0
+  assert net.port_to_int(port) > 0
 }
 
 pub fn connect_test() {
+  let assert Ok(port) = net.port(0)
+
   let assert Ok(tcp_port) =
-    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port:, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
   let assert Ok(port_num) = tcp.port(tcp_port)
@@ -27,9 +31,11 @@ pub fn connect_test() {
 }
 
 pub fn connect_ipv6_test() {
+  let assert Ok(port) = net.port(0)
+
   let assert Ok(tcp_port) =
     tcp.ListenOptions(
-      port: 0,
+      port:,
       ip_address: net.Ipv6Address(0, 0, 0, 0, 0, 0, 0, 1),
     )
     |> tcp.listen
@@ -40,23 +46,30 @@ pub fn connect_ipv6_test() {
 }
 
 pub fn connect_error_test() {
-  let assert Error(tcp.Posix(net.Econnrefused)) = tcp.connect(host, 1, net.Ipv4)
+  let assert Ok(port) = net.port(1)
+
+  let assert Error(tcp.Posix(net.Econnrefused)) =
+    tcp.connect(host, port, net.Ipv4)
 }
 
 // ---------- listen ---------- //
 
 pub fn listen_error_test() {
+  let assert Ok(port) = net.port(1)
+
   // Port 1 is privileged so listening should fail
   let assert Error(tcp.Posix(net.Eacces)) =
-    tcp.ListenOptions(port: 1, ip_address: net.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port:, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 }
 
 // ---------- accept ---------- //
 
 pub fn accept_timeout_test() {
+  let assert Ok(port) = net.port(0)
+
   let assert Ok(listener) =
-    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port:, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
   // No client connects, so accept should time out
@@ -178,8 +191,10 @@ pub fn shutdown_closed_test() {
 // Creates a TCP listener on an OS-assigned port, connects a client socket
 // to it, and returns the client socket along with the listener port
 fn connected_pair() -> #(Tcp, Tcp) {
+  let assert Ok(port) = net.port(0)
+
   let assert Ok(listener) =
-    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port:, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
   let assert Ok(port_num) = tcp.port(listener)

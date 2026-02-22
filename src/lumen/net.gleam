@@ -8,6 +8,23 @@ pub type IpVersion {
   Ipv6
 }
 
+pub opaque type Port {
+  Port(Int)
+}
+
+pub fn port(num: Int) -> Result(Port, Nil) {
+  case num >= 0, num <= 65_535 {
+    True, True -> Ok(Port(num))
+    _, _ -> Error(Nil)
+  }
+}
+
+pub fn port_to_int(port: Port) -> Int {
+  let Port(num) = port
+
+  num
+}
+
 pub type Timeout {
   Timeout(Int)
   Infinity

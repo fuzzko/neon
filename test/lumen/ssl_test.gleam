@@ -36,8 +36,10 @@ pub fn connect_test() {
 
   testing.start_ssl_server()
 
+  let assert Ok(port) = net.port(0)
+
   let assert Ok(listener) =
-    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port:, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
   let assert Ok(port_num) = tcp.port(listener)
@@ -61,12 +63,16 @@ pub fn connect_test() {
 pub fn connect_error_test() {
   testing.start_ssl_server()
 
-  let assert Error(ssl.Posix(net.Econnrefused)) = ssl.connect(host, 1, False)
+  let assert Ok(port) = net.port(1)
+
+  let assert Error(ssl.Posix(net.Econnrefused)) = ssl.connect(host, port, False)
 }
 
 pub fn upgrade_error_test() {
+  let assert Ok(port) = net.port(0)
+
   let assert Ok(listener) =
-    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port:, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
   let assert Ok(port_num) = tcp.port(listener)

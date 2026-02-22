@@ -54,7 +54,11 @@ pub fn upgrade(
   ssl_upgrade_(socket, host, verified)
 }
 
-pub fn connect(host: String, port: Int, verified: Bool) -> Result(Ssl, SslError) {
+pub fn connect(
+  host: String,
+  port: net.Port,
+  verified: Bool,
+) -> Result(Ssl, SslError) {
   host
   |> charlist.from_string
   |> ssl_connect_(port, verified)
@@ -91,7 +95,7 @@ fn ssl_upgrade_(
 @external(erlang, "lumen_ffi", "ssl_connect")
 fn ssl_connect_(
   host: Charlist,
-  port: Int,
+  port: net.Port,
   verified: Bool,
 ) -> Result(Ssl, SslError)
 

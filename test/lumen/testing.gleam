@@ -30,8 +30,10 @@ pub fn ssl_connected_pair() -> #(Ssl, Ssl) {
 pub fn tcp_connected_pair() -> #(Tcp, Tcp) {
   start_ssl_server()
 
+  let assert Ok(port) = net.port(0)
+
   let assert Ok(server_ssl) =
-    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
+    tcp.ListenOptions(port:, ip_address: net.Ipv4Address(127, 0, 0, 1))
     |> tcp.listen
 
   let assert Ok(port) = tcp.port(server_ssl)

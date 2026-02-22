@@ -32,7 +32,7 @@ inet_port(Socket) ->
 
 %%% tcp %%%
 
-tcp_connect(Host, Port, IpVersion) ->
+tcp_connect(Host, {port, Port}, IpVersion) ->
   Inet = ip_version_to_inet(IpVersion),
 
   Resp = gen_tcp:connect(Host, Port, [binary, {packet, raw}, {active, false}, Inet]),
@@ -58,7 +58,7 @@ tcp_send(TcpSocket, Packet) ->
   Sent = gen_tcp:send(TcpSocket, Packet),
   normalise_tcp(Sent).
 
-tcp_listen({listen_options, Port, IpAddress}) ->
+tcp_listen({listen_options, {port, Port}, IpAddress}) ->
   {Inet, Address} = ip_address_and_version(IpAddress),
 
   Options = [
@@ -100,7 +100,7 @@ normalise_tcp({error, Posix}) -> {error, {posix, Posix}}.
 
 %%% ssl %%%
 
-ssl_connect(Host, Port, Verified) ->
+ssl_connect(Host, {port, Port}, Verified) ->
   ssl:start(),
 
   Opts = case Verified of

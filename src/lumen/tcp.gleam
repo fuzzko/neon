@@ -13,7 +13,7 @@ pub type TcpError {
 
 pub fn connect(
   host: String,
-  port: Int,
+  port: net.Port,
   ip_version: net.IpVersion,
 ) -> Result(Tcp, TcpError) {
   host
@@ -39,7 +39,7 @@ pub fn shutdown(socket: Tcp) -> Result(Nil, TcpError) {
 }
 
 pub type ListenOptions {
-  ListenOptions(port: Int, ip_address: net.IpAddress)
+  ListenOptions(port: net.Port, ip_address: net.IpAddress)
 }
 
 pub fn listen(opts: ListenOptions) -> Result(Tcp, TcpError) {
@@ -54,14 +54,15 @@ pub fn close(socket: Tcp) -> Nil {
   tcp_close_(socket)
 }
 
-pub fn port(socket: Tcp) -> Result(Int, Nil) {
+pub fn port(socket: Tcp) -> Result(net.Port, Nil) {
   inet_port_(socket)
+  |> result.try(net.port)
 }
 
 @external(erlang, "lumen_ffi", "tcp_connect")
 fn tcp_connect_(
   host: Charlist,
-  port: Int,
+  port: net.Port,
   ip_version: net.IpVersion,
 ) -> Result(Tcp, TcpError)
 
