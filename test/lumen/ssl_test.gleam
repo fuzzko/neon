@@ -103,6 +103,18 @@ pub fn receive_forever_test() {
   let assert Ok(_) = process.receive(test_subject, 1000)
 }
 
+// ---------- close ---------- //
+
+pub fn close_test() {
+  let #(ssl_socket, server_ssl) = testing.ssl_connected_pair()
+
+  let assert Ok(Nil) = ssl.close(ssl_socket)
+  let assert Ok(Nil) = ssl.close(ssl_socket)
+
+  let assert Ok(Nil) = ssl.close(server_ssl)
+  let assert Ok(Nil) = ssl.close(server_ssl)
+}
+
 // ---------- shutdown ---------- //
 
 pub fn shutdown_test() {

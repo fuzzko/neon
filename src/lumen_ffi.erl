@@ -113,10 +113,8 @@ ssl_shutdown(SslSocket) ->
   normalise(Shut).
 
 ssl_close(SslSocket) ->
-  with_rescue(fun() ->
-    Resp = ssl:close(SslSocket),
-    normalise(Resp)
-  end).
+  Resp = ssl:close(SslSocket),
+  normalise(Resp).
 
 ssl_recv(SslSocket, Size, Timeout) ->
   Resp = ssl:recv(SslSocket, Size, Timeout),
@@ -173,8 +171,3 @@ normalise(ok) -> {ok, nil};
 normalise({ok, T}) -> {ok, T};
 normalise({error, {timeout, _}}) -> {error, timeout};
 normalise({error, _} = E) -> E.
-
-with_rescue(Fun) ->
-  try Fun()
-  catch error:badarg -> {error, nil}
-  end.
