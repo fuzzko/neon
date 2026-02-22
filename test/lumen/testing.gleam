@@ -54,4 +54,4 @@ pub fn ssl_handshake(
   rsa_private_key: BitArray,
   ca_certs: List(BitArray),
   timeout: Int,
-) -> Result(Ssl, net.PosixError)
+) -> Result(Ssl, net.Posix)

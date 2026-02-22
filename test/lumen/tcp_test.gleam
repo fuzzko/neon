@@ -40,7 +40,7 @@ pub fn connect_ipv6_test() {
 }
 
 pub fn connect_error_test() {
-  let assert Error(net.Econnrefused) = tcp.connect(host, 1, net.Ipv4)
+  let assert Error(tcp.Posix(net.Econnrefused)) = tcp.connect(host, 1, net.Ipv4)
 }
 
 // ---------- send ---------- //
@@ -77,7 +77,7 @@ pub fn receive_timeout_test() {
   let #(socket, _listener) = connected_pair()
 
   // No data is sent, so receive should time out
-  let assert Error(net.Timeout) = tcp.receive(socket, 1, 100)
+  let assert Error(tcp.Timeout) = tcp.receive(socket, 1, 100)
 
   let assert Ok(_) = tcp.shutdown(socket)
 }
@@ -114,8 +114,8 @@ pub fn shutdown_closed_test() {
   let #(socket, listener) = connected_pair()
 
   // Close the underlying port entirely so shutdown will fail
-  let _ = tcp.close(socket)
-  let _ = tcp.close(listener)
+  assert Nil == tcp.close(socket)
+  assert Nil == tcp.close(listener)
 
   let assert Error(_posix) = tcp.shutdown(socket)
 }

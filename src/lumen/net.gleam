@@ -9,9 +9,7 @@ pub type IpVersion {
 }
 
 // https://www.erlang.org/doc/apps/kernel/inet.html#module-posix-error-codes
-pub type PosixError {
-  Closed
-  Timeout
+pub type Posix {
   Eaddrinuse
   Eaddrnotavail
   Eafnosupport
@@ -90,10 +88,8 @@ pub type PosixError {
   Exdev
 }
 
-pub fn posix_error_to_string(code: PosixError) -> String {
+pub fn posix_to_string(code: Posix) -> String {
   case code {
-    Closed -> "closed"
-    Timeout -> "timeout"
     Eaddrinuse -> "eaddrinuse"
     Eaddrnotavail -> "eaddrnotavail"
     Eafnosupport -> "eafnosupport"

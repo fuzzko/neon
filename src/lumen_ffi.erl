@@ -11,6 +11,7 @@
   tcp_recv/3,
   tcp_shutdown/1,
   ssl_connect/3,
+  ssl_upgrade/3,
   ssl_send/2,
   ssl_recv_forever/2,
   ssl_recv/3,
@@ -38,23 +39,26 @@ tcp_connect(Host, Port, IpVersion) ->
   Inet = ip_version_to_inet(IpVersion),
 
   Resp = gen_tcp:connect(Host, Port, [binary, {packet, raw}, {active, false}, Inet]),
-  normalise(Resp).
+  normalise_tcp(Resp).
+
+ip_version_to_inet(ipv6) -> inet6;
+ip_version_to_inet(ipv4) -> inet.
 
 tcp_shutdown(TcpSocket) ->
   Shut = gen_tcp:shutdown(TcpSocket, read_write),
-  normalise(Shut).
+  normalise_tcp(Shut).
 
 tcp_recv(TcpSocket, Size, Timeout) ->
   Resp = gen_tcp:recv(TcpSocket, Size, Timeout),
-  normalise(Resp).
+  normalise_tcp(Resp).
 
 tcp_recv_forever(TcpSocket, Size) ->
   Resp = gen_tcp:recv(TcpSocket, Size, infinity),
-  normalise(Resp).
+  normalise_tcp(Resp).
 
 tcp_send(TcpSocket, Packet) ->
-    Sent = gen_tcp:send(TcpSocket, Packet),
-    normalise(Sent).
+  Sent = gen_tcp:send(TcpSocket, Packet),
+  normalise_tcp(Sent).
 
 tcp_listen({listen_options, Port, IpAddress}) ->
   {Inet, Address} = ip_address_and_version(IpAddress),
@@ -68,29 +72,50 @@ tcp_listen({listen_options, Port, IpAddress}) ->
     Inet
   ],
   Resp = gen_tcp:listen(Port, Options),
-  normalise(Resp).
-
-tcp_accept(TcpSocket, Timeout) ->
-  Resp = gen_tcp:accept(TcpSocket, Timeout),
-  normalise(Resp).
-
-tcp_close(TcpSocket) ->
-  case gen_tcp:close(TcpSocket) of
-    ok -> {ok, nil};
-    _ -> {error, nil}
-  end.
-
-ip_version_to_inet(ipv6) -> inet6;
-ip_version_to_inet(ipv4) -> inet.
+  normalise_tcp(Resp).
 
 ip_address_and_version({ipv4_address, A, B, C, D}) ->
   {inet, {A, B, C, D}};
 ip_address_and_version({ipv6_address, A, B, C, D, E, F, G, H}) ->
   {inet6, {A, B, C, D, E, F, G, H}}.
 
+tcp_accept(TcpSocket, Timeout) ->
+  Resp = gen_tcp:accept(TcpSocket, Timeout),
+  normalise_tcp(Resp).
+
+tcp_close(TcpSocket) ->
+  gen_tcp:close(TcpSocket),
+  nil.
+
+normalise_tcp(ok) -> {ok, nil};
+normalise_tcp({ok, TcpSocket}) -> {ok, TcpSocket};
+normalise_tcp({error, closed} = E) -> E;
+normalise_tcp({error, timeout} = E) -> E;
+normalise_tcp({error, system_limit} = E) -> E;
+normalise_tcp({error, {timeout, _}}) -> {error, timeout};
+normalise_tcp({error, Posix}) -> {error, {posix, Posix}}.
+
 %%% ssl %%%
 
-ssl_connect(TcpSocket, Host, Verified) ->
+ssl_connect(Host, Port, Verified) ->
+  ssl:start(),
+
+  Opts = case Verified of
+    false -> [{verify, verify_none}];
+    true -> [
+      {verify, verify_peer},
+      {cacerts, public_key:cacerts_get()},
+      {server_name_indication, binary_to_list(Host)},
+      {customize_hostname_check, [
+        {match_fun, public_key:pkix_verify_hostname_match_fun(https)}
+      ]
+    }]
+  end,
+
+  Resp = ssl:connect(Host, Port, [binary, {packet, raw}, {active, false} | Opts]),
+  normalise_ssl(Resp).
+
+ssl_upgrade(TcpSocket, Host, Verified) ->
   ssl:start(),
 
   Opts = case Verified of
@@ -106,68 +131,80 @@ ssl_connect(TcpSocket, Host, Verified) ->
   end,
 
   Resp = ssl:connect(TcpSocket, [binary, {packet, raw}, {active, false} | Opts]),
-  normalise(Resp).
+  normalise_ssl(Resp).
 
 ssl_shutdown(SslSocket) ->
   Shut = ssl:shutdown(SslSocket, read_write),
-  normalise(Shut).
+  normalise_ssl(Shut).
 
 ssl_close(SslSocket) ->
   Resp = ssl:close(SslSocket),
-  normalise(Resp).
+  normalise_ssl(Resp).
 
 ssl_recv(SslSocket, Size, Timeout) ->
   Resp = ssl:recv(SslSocket, Size, Timeout),
-  normalise(Resp).
+  normalise_ssl(Resp).
 
 ssl_recv_forever(SslSocket, Size) ->
   Resp = ssl:recv(SslSocket, Size, infinity),
-  normalise(Resp).
+  normalise_ssl(Resp).
 
 ssl_send(SslSocket, Packet) ->
   Sent = ssl:send(SslSocket, Packet),
-  normalise(Sent).
+  normalise_ssl(Sent).
+
+normalise_ssl(ok) -> {ok, nil};
+normalise_ssl({ok, SslSocket}) -> {ok, SslSocket};
+normalise_ssl({error, closed}) -> {error, closed};
+normalise_ssl({error, timeout}) -> {error, timeout};
+normalise_ssl({error, {options, _}}) -> {error, invalid_options};
+normalise_ssl({error, {tls_alert, {Alert, Description}}}) ->
+  Desc = unicode:characters_to_binary(Description),
+  {error, {tls_alert, {Alert, Desc}}};
+normalise_ssl({error, Reason}) when is_atom(Reason) ->
+  {error, {posix, Reason}};
+normalise_ssl({error, Reason}) ->
+  Formatted = ssl:format_error(Reason),
+  Description = unicode:characters_to_binary(Formatted),
+  {error, {other, Description}}.
 
 %%% Udp %%%
 
 udp_open(Port) ->
-  normalise(gen_udp:open(Port, [binary, {active, false}])).
+  normalise_udp(gen_udp:open(Port, [binary, {active, false}])).
 
 udp_connect(UdpSocket, Address, Port) ->
   Resp = gen_udp:connect(UdpSocket, Address, Port),
-  normalise(Resp).
+  normalise_udp(Resp).
 
 udp_send(UdpSocket, Packet) ->
   Resp = gen_udp:send(UdpSocket, Packet),
-  normalise(Resp).
+  normalise_tcp(Resp).
 
 udp_receive(UdpSocket, Length, Timeout) ->
   Resp = gen_udp:recv(UdpSocket, Length, Timeout),
-  normalise_udp_recv(Resp).
+  normalise_udp(Resp).
 
 udp_receive_forever(UdpSocket, Length) ->
   Resp = gen_udp:recv(UdpSocket, Length),
-  normalise_udp_recv(Resp).
+  normalise_udp(Resp).
 
 udp_close(UdpSocket) ->
-  Resp = gen_udp:close(UdpSocket),
-  normalise(Resp).
+  gen_udp:close(UdpSocket),
+  nil.
 
-%%% Normalise results %%%
-
-normalise_udp_recv({ok, {Address, Port, _, Packet}}) ->
+normalise_udp(ok) -> {ok, nil};
+normalise_udp({ok, {Address, Port, _, Packet}}) ->
   {ok, {normalise_ip_address(Address), Port, Packet}};
-normalise_udp_recv({ok, {Address, Port, Packet}}) ->
+normalise_udp({ok, {Address, Port, Packet}}) ->
   {ok, {normalise_ip_address(Address), Port, Packet}};
-normalise_udp_recv({error, timeout}) -> {error, timeout};
-normalise_udp_recv({error, _} = E) -> E.
+normalise_udp({ok, UdpSocket}) -> {ok, UdpSocket};
+normalise_udp({error, timeout} = E) -> E;
+normalise_udp({error, system_limit} = E) -> E;
+normalise_udp({error, not_owner} = E) -> E;
+normalise_udp({error, Posix}) -> {error, {posix, Posix}}.
 
 normalise_ip_address({A, B, C, D}) ->
   {ipv4_address, A, B, C, D};
 normalise_ip_address({A, B, C, D, E, F, G, H}) ->
   {ipv6_address, A, B, C, D, E, F, G, H}.
-
-normalise(ok) -> {ok, nil};
-normalise({ok, T}) -> {ok, T};
-normalise({error, {timeout, _}}) -> {error, timeout};
-normalise({error, _} = E) -> E.

@@ -38,7 +38,8 @@ pub fn send_closed_test() {
   let assert Ok(port_num) = udp.port(sock)
 
   let assert Ok(Nil) = udp.connect(sock, host, port_num)
-  let assert Ok(Nil) = udp.close(sock)
+
+  udp.close(sock)
 
   let assert Error(_) = udp.send(sock, <<"hello":utf8>>)
 }
@@ -65,7 +66,7 @@ pub fn receive_timeout_test() {
   let assert Ok(sock) = udp.open(0)
 
   // No data is sent, so receive should time out
-  let assert Error(net.Timeout) = udp.receive(sock, 0, 100)
+  let assert Error(udp.Timeout) = udp.receive(sock, 0, 100)
 }
 
 pub fn receive_forever_test() {
@@ -97,13 +98,13 @@ pub fn receive_forever_test() {
 pub fn close_test() {
   let assert Ok(sock) = udp.open(0)
 
-  let assert Ok(Nil) = udp.close(sock)
+  udp.close(sock)
 }
 
 pub fn close_receive_test() {
   let assert Ok(sock) = udp.open(0)
 
-  let assert Ok(Nil) = udp.close(sock)
+  udp.close(sock)
 
   // Receiving on a closed socket should fail
   let assert Error(_) = udp.receive(sock, 0, 100)
