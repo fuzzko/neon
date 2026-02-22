@@ -1,6 +1,18 @@
+import gleam/erlang/charlist.{type Charlist}
+
 pub type IpAddress {
   Ipv4Address(Int, Int, Int, Int)
   Ipv6Address(Int, Int, Int, Int, Int, Int, Int, Int)
+}
+
+pub fn parse_ip_address(address: String) -> Result(IpAddress, Posix) {
+  address
+  |> charlist.from_string
+  |> inet_parse_address
+}
+
+pub fn ip_address_to_string(address: IpAddress) -> String {
+  inet_ntoa(address)
 }
 
 pub type IpVersion {
@@ -190,3 +202,9 @@ pub fn posix_to_string(code: Posix) -> String {
     Exdev -> "exdev"
   }
 }
+
+@external(erlang, "lumen_ffi", "inet_parse_address")
+fn inet_parse_address(address: Charlist) -> Result(IpAddress, Posix)
+
+@external(erlang, "lumen_ffi", "inet_ntoa")
+fn inet_ntoa(address: IpAddress) -> String
