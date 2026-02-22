@@ -43,6 +43,26 @@ pub fn connect_error_test() {
   let assert Error(tcp.Posix(net.Econnrefused)) = tcp.connect(host, 1, net.Ipv4)
 }
 
+// ---------- listen ---------- //
+
+pub fn listen_error_test() {
+  // Port 1 is privileged so listening should fail
+  let assert Error(tcp.Posix(net.Eacces)) =
+    tcp.ListenOptions(port: 1, ip_address: net.Ipv4Address(127, 0, 0, 1))
+    |> tcp.listen
+}
+
+// ---------- accept ---------- //
+
+pub fn accept_timeout_test() {
+  let assert Ok(listener) =
+    tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
+    |> tcp.listen
+
+  // No client connects, so accept should time out
+  let assert Error(tcp.Timeout) = tcp.accept(listener, 50)
+}
+
 // ---------- send ---------- //
 
 pub fn send_test() {
@@ -82,6 +102,17 @@ pub fn receive_timeout_test() {
   let assert Ok(_) = tcp.shutdown(socket)
 }
 
+pub fn receive_closed_test() {
+  let #(socket, listener) = connected_pair()
+
+  let assert Ok(server_sock) = tcp.accept(listener, 1000)
+  tcp.close(server_sock)
+
+  process.sleep(50)
+
+  let assert Error(tcp.Closed) = tcp.receive(socket, 1, 1000)
+}
+
 pub fn receive_forever_test() {
   let #(socket, listener) = connected_pair()
   let test_subject = process.new_subject()
@@ -100,6 +131,30 @@ pub fn receive_forever_test() {
   let assert Ok(_) = process.receive(test_subject, 1000)
 
   let assert Ok(_) = tcp.shutdown(socket)
+}
+
+pub fn receive_forever_closed_test() {
+  let #(socket, listener) = connected_pair()
+
+  let _pid =
+    process.spawn(fn() {
+      let assert Ok(server_sock) = tcp.accept(listener, 5000)
+      tcp.close(server_sock)
+    })
+
+  let assert Error(tcp.Closed) = tcp.receive_forever(socket, 1)
+}
+
+// ---------- close ---------- //
+
+pub fn close_test() {
+  let #(socket, listener) = connected_pair()
+
+  assert Nil == tcp.close(socket)
+  assert Nil == tcp.close(socket)
+
+  assert Nil == tcp.close(listener)
+  assert Nil == tcp.close(listener)
 }
 
 // ---------- shutdown ---------- //
