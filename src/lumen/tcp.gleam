@@ -1,4 +1,3 @@
-import gleam/erlang/charlist.{type Charlist}
 import gleam/result
 import lumen/net
 
@@ -12,12 +11,11 @@ pub type TcpError {
 }
 
 pub fn connect(
-  host: String,
+  address: net.Address,
   port: net.Port,
   ip_version: net.IpVersion,
 ) -> Result(Tcp, TcpError) {
-  host
-  |> charlist.from_string
+  address
   |> tcp_connect_(net.port_to_int(port), ip_version)
 }
 
@@ -63,7 +61,7 @@ pub fn port(socket: Tcp) -> Result(net.Port, Nil) {
 
 @external(erlang, "lumen_ffi", "tcp_connect")
 fn tcp_connect_(
-  host: Charlist,
+  address: net.Address,
   port: Int,
   ip_version: net.IpVersion,
 ) -> Result(Tcp, TcpError)

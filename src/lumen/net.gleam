@@ -1,5 +1,23 @@
 import gleam/erlang/charlist.{type Charlist}
 
+pub opaque type Address {
+  Hostname(String)
+  IpAddress(IpAddress)
+  Local(String)
+}
+
+pub fn hostname(name: String) -> Address {
+  Hostname(name)
+}
+
+pub fn ip_address(addr: IpAddress) -> Address {
+  IpAddress(addr)
+}
+
+pub fn local(path: String) -> Address {
+  Local(path)
+}
+
 pub type IpAddress {
   Ipv4Address(Int, Int, Int, Int)
   Ipv6Address(Int, Int, Int, Int, Int, Int, Int, Int)

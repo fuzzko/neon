@@ -1,4 +1,5 @@
 import gleam/erlang/process
+import gleam/result
 import lumen/net
 import lumen/ssl.{type Ssl}
 import lumen/tcp.{type Tcp}
@@ -37,8 +38,11 @@ pub fn tcp_connected_pair() -> #(Tcp, Tcp) {
     |> tcp.listen(port, _)
 
   let assert Ok(port) = tcp.port(server_ssl)
+  let assert Ok(address) =
+    net.parse_ip_address(host)
+    |> result.map(net.ip_address)
 
-  let assert Ok(client_tcp) = tcp.connect(host, port, net.Ipv4)
+  let assert Ok(client_tcp) = tcp.connect(address, port, net.Ipv4)
 
   #(client_tcp, server_ssl)
 }

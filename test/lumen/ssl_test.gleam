@@ -1,4 +1,5 @@
 import gleam/erlang/process
+import gleam/result
 import lumen/net
 import lumen/ssl
 import lumen/tcp
@@ -86,7 +87,11 @@ pub fn upgrade_error_test() {
       process.send(test_subject, Nil)
     })
 
-  let assert Ok(socket) = tcp.connect(host, port_num, net.Ipv4)
+  let assert Ok(address) =
+    net.parse_ip_address(host)
+    |> result.map(net.ip_address)
+
+  let assert Ok(socket) = tcp.connect(address, port_num, net.Ipv4)
 
   let assert Error(ssl.Closed) = ssl.upgrade(socket, "127.0.0.1", False)
 

@@ -1,4 +1,3 @@
-import gleam/erlang/charlist.{type Charlist}
 import gleam/result
 import lumen/net
 
@@ -19,12 +18,10 @@ pub fn open(port: net.Port) -> Result(Udp, UdpError) {
 
 pub fn connect(
   socket: Udp,
-  host: String,
+  address: net.Address,
   port: net.Port,
 ) -> Result(Nil, UdpError) {
-  host
-  |> charlist.from_string
-  |> udp_connect_(socket, _, net.port_to_int(port))
+  udp_connect_(socket, address, net.port_to_int(port))
 }
 
 pub fn send(socket: Udp, payload: BitArray) -> Result(Nil, UdpError) {
@@ -61,7 +58,11 @@ pub fn port(socket: Udp) -> Result(net.Port, Nil) {
 fn udp_open_(port: Int) -> Result(Udp, UdpError)
 
 @external(erlang, "lumen_ffi", "udp_connect")
-fn udp_connect_(socket: Udp, host: Charlist, port: Int) -> Result(Nil, UdpError)
+fn udp_connect_(
+  socket: Udp,
+  address: net.Address,
+  port: Int,
+) -> Result(Nil, UdpError)
 
 @external(erlang, "lumen_ffi", "udp_send")
 fn udp_send_(socket: Udp, payload: BitArray) -> Result(Nil, UdpError)

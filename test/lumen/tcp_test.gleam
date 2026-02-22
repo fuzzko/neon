@@ -1,4 +1,5 @@
 import gleam/erlang/process
+import gleam/result
 import lumen/net
 import lumen/tcp.{type Tcp}
 
@@ -26,8 +27,11 @@ pub fn connect_test() {
     |> tcp.listen(port, _)
 
   let assert Ok(port_num) = tcp.port(tcp_port)
+  let assert Ok(address) =
+    net.parse_ip_address(host)
+    |> result.map(net.ip_address)
 
-  let assert Ok(_socket) = tcp.connect(host, port_num, net.Ipv4)
+  let assert Ok(_socket) = tcp.connect(address, port_num, net.Ipv4)
 }
 
 pub fn connect_ipv6_test() {
@@ -38,15 +42,21 @@ pub fn connect_ipv6_test() {
     |> tcp.listen(port, _)
 
   let assert Ok(port_num) = tcp.port(tcp_port)
+  let assert Ok(address) =
+    net.parse_ip_address("::1")
+    |> result.map(net.ip_address)
 
-  let assert Ok(_socket) = tcp.connect("::1", port_num, net.Ipv6)
+  let assert Ok(_socket) = tcp.connect(address, port_num, net.Ipv6)
 }
 
 pub fn connect_error_test() {
   let assert Ok(port) = net.port(1)
+  let assert Ok(address) =
+    net.parse_ip_address(host)
+    |> result.map(net.ip_address)
 
   let assert Error(tcp.Posix(net.Econnrefused)) =
-    tcp.connect(host, port, net.Ipv4)
+    tcp.connect(address, port, net.Ipv4)
 }
 
 // ---------- listen ---------- //
@@ -195,7 +205,10 @@ fn connected_pair() -> #(Tcp, Tcp) {
     |> tcp.listen(port, _)
 
   let assert Ok(port_num) = tcp.port(listener)
-  let assert Ok(socket) = tcp.connect(host, port_num, net.Ipv4)
+  let assert Ok(address) =
+    net.parse_ip_address(host)
+    |> result.map(net.ip_address)
+  let assert Ok(socket) = tcp.connect(address, port_num, net.Ipv4)
 
   #(socket, listener)
 }

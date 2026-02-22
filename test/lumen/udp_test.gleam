@@ -1,4 +1,5 @@
 import gleam/erlang/process
+import gleam/result
 import lumen/net
 import lumen/udp
 
@@ -29,26 +30,35 @@ pub fn connect_test() {
   let assert Ok(port) = net.port(0)
   let assert Ok(sock) = udp.open(port)
   let assert Ok(port_num) = udp.port(sock)
+  let assert Ok(address) =
+    net.parse_ip_address(host)
+    |> result.map(net.ip_address)
 
-  let assert Ok(Nil) = udp.connect(sock, host, port_num)
+  let assert Ok(Nil) = udp.connect(sock, address, port_num)
 }
 
 pub fn connect_closed_test() {
   let assert Ok(port) = net.port(0)
   let assert Ok(sock) = udp.open(port)
+  let assert Ok(address) =
+    net.parse_ip_address(host)
+    |> result.map(net.ip_address)
 
   udp.close(sock)
 
   let assert Ok(closed_port) = net.port(8000)
-  let assert Error(_) = udp.connect(sock, host, closed_port)
+  let assert Error(_) = udp.connect(sock, address, closed_port)
 }
 
 pub fn send_test() {
   let assert Ok(port) = net.port(0)
   let assert Ok(sock) = udp.open(port)
   let assert Ok(port_num) = udp.port(sock)
+  let assert Ok(address) =
+    net.parse_ip_address(host)
+    |> result.map(net.ip_address)
 
-  let assert Ok(Nil) = udp.connect(sock, host, port_num)
+  let assert Ok(Nil) = udp.connect(sock, address, port_num)
 
   let assert Ok(Nil) = udp.send(sock, <<"hello":utf8>>)
 }
@@ -57,8 +67,11 @@ pub fn send_closed_test() {
   let assert Ok(port) = net.port(0)
   let assert Ok(sock) = udp.open(port)
   let assert Ok(port_num) = udp.port(sock)
+  let assert Ok(address) =
+    net.parse_ip_address(host)
+    |> result.map(net.ip_address)
 
-  let assert Ok(Nil) = udp.connect(sock, host, port_num)
+  let assert Ok(Nil) = udp.connect(sock, address, port_num)
 
   udp.close(sock)
 
@@ -74,7 +87,11 @@ pub fn receive_test() {
   let assert Ok(receiver_port) = udp.port(receiver)
 
   let assert Ok(sender) = udp.open(port)
-  let assert Ok(Nil) = udp.connect(sender, host, receiver_port)
+  let assert Ok(address) =
+    net.parse_ip_address(host)
+    |> result.map(net.ip_address)
+
+  let assert Ok(Nil) = udp.connect(sender, address, receiver_port)
   let assert Ok(Nil) = udp.send(sender, <<"hello":utf8>>)
 
   let assert Ok(udp.ReceiveData(
@@ -102,7 +119,10 @@ pub fn receive_forever_test() {
   let _pid =
     process.spawn(fn() {
       let assert Ok(sender) = udp.open(port)
-      let assert Ok(Nil) = udp.connect(sender, host, receiver_port)
+      let assert Ok(address) =
+        net.parse_ip_address(host)
+        |> result.map(net.ip_address)
+      let assert Ok(Nil) = udp.connect(sender, address, receiver_port)
       let assert Ok(Nil) = udp.send(sender, <<"world":utf8>>)
       process.send(test_subject, Nil)
     })

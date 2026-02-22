@@ -45,10 +45,16 @@ inet_ntoa({ipv6_address, A, B, C, D, E, F, G, H}) ->
 
 %%% tcp %%%
 
-tcp_connect(Host, Port, IpVersion) ->
+tcp_connect(Address, Port, IpVersion) ->
   Inet = ip_version_to_inet(IpVersion),
+  Addr = case Address of
+    {hostname, Hostname} -> Hostname;
+    {ip_address, {ipv4_address, A, B, C, D}} -> {A, B, C, D};
+    {ip_address, {ipv6_address, A, B, C, D, E, F, G, H}} -> {A, B, C, D, E, F, G, H};
+    {local, File} -> {local, File}
+  end,
 
-  Resp = gen_tcp:connect(Host, Port, [binary, {packet, raw}, {active, false}, Inet]),
+  Resp = gen_tcp:connect(Addr, Port, [binary, {packet, raw}, {active, false}, Inet]),
   normalise_tcp(Resp).
 
 ip_version_to_inet(ipv6) -> inet6;
@@ -191,7 +197,13 @@ udp_open(Port) ->
   normalise_udp(gen_udp:open(Port, [binary, {active, false}])).
 
 udp_connect(UdpSocket, Address, Port) ->
-  Resp = gen_udp:connect(UdpSocket, Address, Port),
+  Addr = case Address of
+    {hostname, Hostname} -> Hostname;
+    {ip_address, {ipv4_address, A, B, C, D}} -> {A, B, C, D};
+    {ip_address, {ipv6_address, A, B, C, D, E, F, G, H}} -> {A, B, C, D, E, F, G, H};
+    {local, File} -> {local, File}
+  end,
+  Resp = gen_udp:connect(UdpSocket, Addr, Port),
   normalise_udp(Resp).
 
 udp_send(UdpSocket, Packet) ->
