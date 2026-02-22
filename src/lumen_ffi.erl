@@ -4,7 +4,7 @@
   inet_port/1,
   tcp_accept/2,
   tcp_close/1,
-  tcp_listen/1,
+  tcp_listen/2,
   tcp_connect/3,
   tcp_send/2,
   tcp_recv/3,
@@ -58,7 +58,7 @@ tcp_send(TcpSocket, Packet) ->
   Sent = gen_tcp:send(TcpSocket, Packet),
   normalise_tcp(Sent).
 
-tcp_listen({listen_options, {port, Port}, IpAddress}) ->
+tcp_listen(Port, {listen_options, IpAddress}) ->
   {Inet, Address} = ip_address_and_version(IpAddress),
 
   Options = [

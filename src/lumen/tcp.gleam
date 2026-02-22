@@ -39,11 +39,13 @@ pub fn shutdown(socket: Tcp) -> Result(Nil, TcpError) {
 }
 
 pub type ListenOptions {
-  ListenOptions(port: net.Port, ip_address: net.IpAddress)
+  ListenOptions(ip_address: net.IpAddress)
 }
 
-pub fn listen(opts: ListenOptions) -> Result(Tcp, TcpError) {
-  tcp_listen_(opts)
+pub fn listen(port: net.Port, opts: ListenOptions) -> Result(Tcp, TcpError) {
+  port
+  |> net.port_to_int
+  |> tcp_listen_(opts)
 }
 
 pub fn accept(socket: Tcp, timeout: net.Timeout) -> Result(Tcp, TcpError) {
@@ -80,7 +82,7 @@ fn tcp_send_(socket: Tcp, packet: BitArray) -> Result(Nil, TcpError)
 fn tcp_shutdown_(socket: Tcp) -> Result(Nil, TcpError)
 
 @external(erlang, "lumen_ffi", "tcp_listen")
-fn tcp_listen_(opts: ListenOptions) -> Result(Tcp, TcpError)
+fn tcp_listen_(port: Int, opts: ListenOptions) -> Result(Tcp, TcpError)
 
 @external(erlang, "lumen_ffi", "tcp_accept")
 fn tcp_accept_(listener: Tcp, timeout: net.Timeout) -> Result(Tcp, TcpError)

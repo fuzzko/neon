@@ -33,8 +33,8 @@ pub fn tcp_connected_pair() -> #(Tcp, Tcp) {
   let assert Ok(port) = net.port(0)
 
   let assert Ok(server_ssl) =
-    tcp.ListenOptions(port:, ip_address: net.Ipv4Address(127, 0, 0, 1))
-    |> tcp.listen
+    tcp.ListenOptions(ip_address: net.Ipv4Address(127, 0, 0, 1))
+    |> tcp.listen(port, _)
 
   let assert Ok(port) = tcp.port(server_ssl)
 

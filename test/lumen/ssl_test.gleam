@@ -39,8 +39,8 @@ pub fn connect_test() {
   let assert Ok(port) = net.port(0)
 
   let assert Ok(listener) =
-    tcp.ListenOptions(port:, ip_address: net.Ipv4Address(127, 0, 0, 1))
-    |> tcp.listen
+    tcp.ListenOptions(ip_address: net.Ipv4Address(127, 0, 0, 1))
+    |> tcp.listen(port, _)
 
   let assert Ok(port_num) = tcp.port(listener)
 
@@ -72,8 +72,8 @@ pub fn upgrade_error_test() {
   let assert Ok(port) = net.port(0)
 
   let assert Ok(listener) =
-    tcp.ListenOptions(port:, ip_address: net.Ipv4Address(127, 0, 0, 1))
-    |> tcp.listen
+    tcp.ListenOptions(ip_address: net.Ipv4Address(127, 0, 0, 1))
+    |> tcp.listen(port, _)
 
   let assert Ok(port_num) = tcp.port(listener)
 
