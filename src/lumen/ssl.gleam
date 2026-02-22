@@ -61,7 +61,7 @@ pub fn connect(
 ) -> Result(Ssl, SslError) {
   host
   |> charlist.from_string
-  |> ssl_connect_(port, verified)
+  |> ssl_connect_(net.port_to_int(port), verified)
 }
 
 pub fn send(socket: Ssl, payload: BitArray) -> Result(Ssl, SslError) {
@@ -95,7 +95,7 @@ fn ssl_upgrade_(
 @external(erlang, "lumen_ffi", "ssl_connect")
 fn ssl_connect_(
   host: Charlist,
-  port: net.Port,
+  port: Int,
   verified: Bool,
 ) -> Result(Ssl, SslError)
 

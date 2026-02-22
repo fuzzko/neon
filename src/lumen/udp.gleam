@@ -11,14 +11,20 @@ pub type UdpError {
   Posix(net.Posix)
 }
 
-pub fn open(port: Int) -> Result(Udp, UdpError) {
-  udp_open_(port)
+pub fn open(port: net.Port) -> Result(Udp, UdpError) {
+  port
+  |> net.port_to_int
+  |> udp_open_
 }
 
-pub fn connect(socket: Udp, host: String, port: Int) -> Result(Nil, UdpError) {
+pub fn connect(
+  socket: Udp,
+  host: String,
+  port: net.Port,
+) -> Result(Nil, UdpError) {
   host
   |> charlist.from_string
-  |> udp_connect_(socket, _, port)
+  |> udp_connect_(socket, _, net.port_to_int(port))
 }
 
 pub fn send(socket: Udp, payload: BitArray) -> Result(Nil, UdpError) {
@@ -46,8 +52,9 @@ pub fn close(socket: Udp) -> Nil {
   udp_close_(socket)
 }
 
-pub fn port(socket: Udp) -> Result(Int, Nil) {
+pub fn port(socket: Udp) -> Result(net.Port, Nil) {
   inet_port_(socket)
+  |> result.try(net.port)
 }
 
 @external(erlang, "lumen_ffi", "udp_open")

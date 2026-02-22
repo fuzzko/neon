@@ -18,7 +18,7 @@ pub fn connect(
 ) -> Result(Tcp, TcpError) {
   host
   |> charlist.from_string
-  |> tcp_connect_(port, ip_version)
+  |> tcp_connect_(net.port_to_int(port), ip_version)
 }
 
 pub fn send(socket: Tcp, payload: BitArray) -> Result(Tcp, TcpError) {
@@ -62,7 +62,7 @@ pub fn port(socket: Tcp) -> Result(net.Port, Nil) {
 @external(erlang, "lumen_ffi", "tcp_connect")
 fn tcp_connect_(
   host: Charlist,
-  port: net.Port,
+  port: Int,
   ip_version: net.IpVersion,
 ) -> Result(Tcp, TcpError)
 
