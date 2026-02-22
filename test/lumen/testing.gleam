@@ -12,7 +12,7 @@ pub fn ssl_connected_pair() -> #(Ssl, Ssl) {
 
   let _pid =
     process.spawn(fn() {
-      let assert Ok(listener) = tcp.accept(server_ssl, 5000)
+      let assert Ok(listener) = tcp.accept(server_ssl, net.Timeout(5000))
       let assert Ok(server_ssl) =
         ssl_handshake(listener, cert, rsa_pk, ca_certs, 5000)
 

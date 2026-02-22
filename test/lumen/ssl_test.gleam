@@ -17,7 +17,7 @@ pub fn upgrade_test() {
 
   let _pid =
     process.spawn(fn() {
-      let assert Ok(listener) = tcp.accept(server_ssl, 5000)
+      let assert Ok(listener) = tcp.accept(server_ssl, net.Timeout(5000))
 
       let assert Ok(_server_ssl) =
         testing.ssl_handshake(listener, cert, rsa_pk, ca_certs, 5000)
@@ -46,7 +46,7 @@ pub fn connect_test() {
 
   let _pid =
     process.spawn(fn() {
-      let assert Ok(accepted) = tcp.accept(listener, 5000)
+      let assert Ok(accepted) = tcp.accept(listener, net.Timeout(5000))
 
       let assert Ok(_server_ssl) =
         testing.ssl_handshake(accepted, cert, rsa_pk, ca_certs, 5000)
@@ -74,7 +74,7 @@ pub fn upgrade_error_test() {
   let test_subject = process.new_subject()
   let _pid =
     process.spawn(fn() {
-      let assert Ok(accepted) = tcp.accept(listener, 5000)
+      let assert Ok(accepted) = tcp.accept(listener, net.Timeout(5000))
 
       let _ = tcp.close(accepted)
       process.send(test_subject, Nil)
@@ -111,14 +111,15 @@ pub fn receive_test() {
   // Server sends data over SSL
   let assert Ok(_) = ssl.send(server_ssl, <<"hello ssl":utf8>>)
 
-  let assert Ok(<<"hello ssl":utf8>>) = ssl.receive(ssl_socket, 9, 1000)
+  let assert Ok(<<"hello ssl":utf8>>) =
+    ssl.receive(ssl_socket, 9, net.Timeout(1000))
 }
 
 pub fn receive_timeout_test() {
   let #(ssl_socket, server_ssl) = testing.ssl_connected_pair()
 
   // No data is sent, so receive should time out
-  let assert Error(ssl.Timeout) = ssl.receive(ssl_socket, 1, 100)
+  let assert Error(ssl.Timeout) = ssl.receive(ssl_socket, 1, net.Timeout(100))
 
   let _ = ssl.close(server_ssl)
 }
@@ -133,7 +134,7 @@ pub fn receive_forever_test() {
       process.send(test_subject, Nil)
     })
 
-  let assert Ok(<<"world ssl":utf8>>) = ssl.receive_forever(ssl_socket, 9)
+  let assert Ok(<<"world ssl":utf8>>) = ssl.receive(ssl_socket, 9, net.Infinity)
 
   let assert Ok(_) = process.receive(test_subject, 1000)
 }
@@ -145,7 +146,7 @@ pub fn receive_closed_test() {
 
   process.sleep(50)
 
-  let assert Error(ssl.Closed) = ssl.receive(ssl_socket, 1, 1000)
+  let assert Error(ssl.Closed) = ssl.receive(ssl_socket, 1, net.Timeout(1000))
 }
 
 pub fn receive_forever_closed_test() {
@@ -158,7 +159,7 @@ pub fn receive_forever_closed_test() {
       process.send(test_subject, Nil)
     })
 
-  let assert Error(ssl.Closed) = ssl.receive_forever(ssl_socket, 1)
+  let assert Error(ssl.Closed) = ssl.receive(ssl_socket, 1, net.Infinity)
 
   let assert Ok(_) = process.receive(test_subject, 1000)
 }

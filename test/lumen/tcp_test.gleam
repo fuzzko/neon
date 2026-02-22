@@ -60,7 +60,7 @@ pub fn accept_timeout_test() {
     |> tcp.listen
 
   // No client connects, so accept should time out
-  let assert Error(tcp.Timeout) = tcp.accept(listener, 50)
+  let assert Error(tcp.Timeout) = tcp.accept(listener, net.Timeout(50))
 }
 
 // ---------- send ---------- //
@@ -85,10 +85,10 @@ pub fn receive_test() {
   let #(socket, listener) = connected_pair()
 
   // Accept the connection on the server side and send data
-  let assert Ok(server_sock) = tcp.accept(listener, 1000)
+  let assert Ok(server_sock) = tcp.accept(listener, net.Timeout(1000))
   let assert Ok(_) = tcp.send(server_sock, <<"hello":utf8>>)
 
-  let assert Ok(<<"hello":utf8>>) = tcp.receive(socket, 5, 1000)
+  let assert Ok(<<"hello":utf8>>) = tcp.receive(socket, 5, net.Timeout(1000))
 
   let assert Ok(_) = tcp.shutdown(socket)
 }
@@ -97,7 +97,7 @@ pub fn receive_timeout_test() {
   let #(socket, _listener) = connected_pair()
 
   // No data is sent, so receive should time out
-  let assert Error(tcp.Timeout) = tcp.receive(socket, 1, 100)
+  let assert Error(tcp.Timeout) = tcp.receive(socket, 1, net.Timeout(100))
 
   let assert Ok(_) = tcp.shutdown(socket)
 }
@@ -105,27 +105,27 @@ pub fn receive_timeout_test() {
 pub fn receive_closed_test() {
   let #(socket, listener) = connected_pair()
 
-  let assert Ok(server_sock) = tcp.accept(listener, 1000)
+  let assert Ok(server_sock) = tcp.accept(listener, net.Timeout(1000))
   tcp.close(server_sock)
 
   process.sleep(50)
 
-  let assert Error(tcp.Closed) = tcp.receive(socket, 1, 1000)
+  let assert Error(tcp.Closed) = tcp.receive(socket, 1, net.Timeout(1000))
 }
 
 pub fn receive_forever_test() {
   let #(socket, listener) = connected_pair()
   let test_subject = process.new_subject()
 
-  // Spawn a process that accepts and sends data, since receive_forever blocks
+  // Spawn a process that accepts and sends data, since receive with Infinity blocks
   let _pid =
     process.spawn(fn() {
-      let assert Ok(server_sock) = tcp.accept(listener, 5000)
+      let assert Ok(server_sock) = tcp.accept(listener, net.Timeout(5000))
       let assert Ok(_) = tcp.send(server_sock, <<"world":utf8>>)
       process.send(test_subject, Nil)
     })
 
-  let assert Ok(<<"world":utf8>>) = tcp.receive_forever(socket, 5)
+  let assert Ok(<<"world":utf8>>) = tcp.receive(socket, 5, net.Infinity)
 
   // Wait for the sender process to finish
   let assert Ok(_) = process.receive(test_subject, 1000)
@@ -138,11 +138,11 @@ pub fn receive_forever_closed_test() {
 
   let _pid =
     process.spawn(fn() {
-      let assert Ok(server_sock) = tcp.accept(listener, 5000)
+      let assert Ok(server_sock) = tcp.accept(listener, net.Timeout(5000))
       tcp.close(server_sock)
     })
 
-  let assert Error(tcp.Closed) = tcp.receive_forever(socket, 1)
+  let assert Error(tcp.Closed) = tcp.receive(socket, 1, net.Infinity)
 }
 
 // ---------- close ---------- //

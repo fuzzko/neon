@@ -7,13 +7,11 @@
   tcp_listen/1,
   tcp_connect/3,
   tcp_send/2,
-  tcp_recv_forever/2,
   tcp_recv/3,
   tcp_shutdown/1,
   ssl_connect/3,
   ssl_upgrade/3,
   ssl_send/2,
-  ssl_recv_forever/2,
   ssl_recv/3,
   ssl_shutdown/1,
   ssl_close/1,
@@ -49,11 +47,12 @@ tcp_shutdown(TcpSocket) ->
   normalise_tcp(Shut).
 
 tcp_recv(TcpSocket, Size, Timeout) ->
-  Resp = gen_tcp:recv(TcpSocket, Size, Timeout),
-  normalise_tcp(Resp).
+  RecvTimeout = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
 
-tcp_recv_forever(TcpSocket, Size) ->
-  Resp = gen_tcp:recv(TcpSocket, Size, infinity),
+  Resp = gen_tcp:recv(TcpSocket, Size, RecvTimeout),
   normalise_tcp(Resp).
 
 tcp_send(TcpSocket, Packet) ->
@@ -80,7 +79,12 @@ ip_address_and_version({ipv6_address, A, B, C, D, E, F, G, H}) ->
   {inet6, {A, B, C, D, E, F, G, H}}.
 
 tcp_accept(TcpSocket, Timeout) ->
-  Resp = gen_tcp:accept(TcpSocket, Timeout),
+  AcceptTimeout = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
+
+  Resp = gen_tcp:accept(TcpSocket, AcceptTimeout),
   normalise_tcp(Resp).
 
 tcp_close(TcpSocket) ->
@@ -142,11 +146,12 @@ ssl_close(SslSocket) ->
   normalise_ssl(Resp).
 
 ssl_recv(SslSocket, Size, Timeout) ->
-  Resp = ssl:recv(SslSocket, Size, Timeout),
-  normalise_ssl(Resp).
+  RecvTimeout = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
 
-ssl_recv_forever(SslSocket, Size) ->
-  Resp = ssl:recv(SslSocket, Size, infinity),
+  Resp = ssl:recv(SslSocket, Size, RecvTimeout),
   normalise_ssl(Resp).
 
 ssl_send(SslSocket, Packet) ->

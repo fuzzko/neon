@@ -8,6 +8,11 @@ pub type IpVersion {
   Ipv6
 }
 
+pub type Timeout {
+  Timeout(Int)
+  Infinity
+}
+
 // https://www.erlang.org/doc/apps/kernel/inet.html#module-posix-error-codes
 pub type Posix {
   Eaddrinuse

@@ -68,13 +68,9 @@ pub fn send(socket: Ssl, payload: BitArray) -> Result(Ssl, SslError) {
 pub fn receive(
   socket: Ssl,
   length: Int,
-  within timeout: Int,
+  timeout: net.Timeout,
 ) -> Result(BitArray, SslError) {
   ssl_receive_(socket, length, timeout)
-}
-
-pub fn receive_forever(socket: Ssl, length: Int) -> Result(BitArray, SslError) {
-  ssl_receive_forever_(socket, length)
 }
 
 pub fn shutdown(socket: Ssl) -> Result(Nil, SslError) {
@@ -106,11 +102,8 @@ fn ssl_send_(socket: Ssl, payload: BitArray) -> Result(Nil, SslError)
 fn ssl_receive_(
   socket: Ssl,
   length: Int,
-  timeout: Int,
+  timeout: net.Timeout,
 ) -> Result(BitArray, SslError)
-
-@external(erlang, "lumen_ffi", "ssl_recv_forever")
-fn ssl_receive_forever_(socket: Ssl, length: Int) -> Result(BitArray, SslError)
 
 @external(erlang, "lumen_ffi", "ssl_shutdown")
 fn ssl_shutdown_(socket: Ssl) -> Result(Nil, SslError)

@@ -29,13 +29,9 @@ pub fn send(socket: Tcp, payload: BitArray) -> Result(Tcp, TcpError) {
 pub fn receive(
   socket: Tcp,
   length: Int,
-  within timeout: Int,
+  within timeout: net.Timeout,
 ) -> Result(BitArray, TcpError) {
   tcp_receive_(socket, length, timeout)
-}
-
-pub fn receive_forever(socket: Tcp, length: Int) -> Result(BitArray, TcpError) {
-  tcp_receive_forever_(socket, length)
 }
 
 pub fn shutdown(socket: Tcp) -> Result(Nil, TcpError) {
@@ -50,7 +46,7 @@ pub fn listen(opts: ListenOptions) -> Result(Tcp, TcpError) {
   tcp_listen_(opts)
 }
 
-pub fn accept(socket: Tcp, timeout: Int) -> Result(Tcp, TcpError) {
+pub fn accept(socket: Tcp, timeout: net.Timeout) -> Result(Tcp, TcpError) {
   tcp_accept_(socket, timeout)
 }
 
@@ -73,11 +69,8 @@ fn tcp_connect_(
 fn tcp_receive_(
   socket: Tcp,
   length: Int,
-  timeout: Int,
+  timeout: net.Timeout,
 ) -> Result(BitArray, TcpError)
-
-@external(erlang, "lumen_ffi", "tcp_recv_forever")
-fn tcp_receive_forever_(socket: Tcp, length: Int) -> Result(BitArray, TcpError)
 
 @external(erlang, "lumen_ffi", "tcp_send")
 fn tcp_send_(socket: Tcp, packet: BitArray) -> Result(Nil, TcpError)
@@ -89,7 +82,7 @@ fn tcp_shutdown_(socket: Tcp) -> Result(Nil, TcpError)
 fn tcp_listen_(opts: ListenOptions) -> Result(Tcp, TcpError)
 
 @external(erlang, "lumen_ffi", "tcp_accept")
-fn tcp_accept_(listener: Tcp, timeout: Int) -> Result(Tcp, TcpError)
+fn tcp_accept_(listener: Tcp, timeout: net.Timeout) -> Result(Tcp, TcpError)
 
 @external(erlang, "lumen_ffi", "tcp_close")
 fn tcp_close_(socket: Tcp) -> Nil
