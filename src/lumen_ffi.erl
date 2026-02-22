@@ -179,7 +179,7 @@ udp_connect(UdpSocket, Address, Port) ->
 
 udp_send(UdpSocket, Packet) ->
   Resp = gen_udp:send(UdpSocket, Packet),
-  normalise_tcp(Resp).
+  normalise_udp(Resp).
 
 udp_receive(UdpSocket, Length, Timeout) ->
   Resp = gen_udp:recv(UdpSocket, Length, Timeout),
@@ -199,9 +199,9 @@ normalise_udp({ok, {Address, Port, _, Packet}}) ->
 normalise_udp({ok, {Address, Port, Packet}}) ->
   {ok, {normalise_ip_address(Address), Port, Packet}};
 normalise_udp({ok, UdpSocket}) -> {ok, UdpSocket};
+normalise_udp({error, closed} = E) -> E;
 normalise_udp({error, timeout} = E) -> E;
 normalise_udp({error, system_limit} = E) -> E;
-normalise_udp({error, not_owner} = E) -> E;
 normalise_udp({error, Posix}) -> {error, {posix, Posix}}.
 
 normalise_ip_address({A, B, C, D}) ->

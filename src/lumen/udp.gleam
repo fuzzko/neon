@@ -8,7 +8,6 @@ pub type UdpError {
   Closed
   Timeout
   SystemLimit
-  NotOwner
   Posix(net.Posix)
 }
 

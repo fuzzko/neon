@@ -10,6 +10,11 @@ pub fn open_test() {
   let assert Ok(_sock) = udp.open(0)
 }
 
+pub fn open_error_test() {
+  // Port 1 is privileged so opening should fail
+  let assert Error(udp.Posix(net.Eacces)) = udp.open(1)
+}
+
 pub fn port_test() {
   let assert Ok(sock) = udp.open(0)
   let assert Ok(port_num) = udp.port(sock)
@@ -22,6 +27,14 @@ pub fn connect_test() {
   let assert Ok(port_num) = udp.port(sock)
 
   let assert Ok(Nil) = udp.connect(sock, host, port_num)
+}
+
+pub fn connect_closed_test() {
+  let assert Ok(sock) = udp.open(0)
+
+  udp.close(sock)
+
+  let assert Error(_) = udp.connect(sock, host, 8000)
 }
 
 pub fn send_test() {
@@ -93,11 +106,20 @@ pub fn receive_forever_test() {
   let assert Ok(_) = process.receive(test_subject, 1000)
 }
 
+pub fn receive_forever_closed_test() {
+  let assert Ok(sock) = udp.open(0)
+
+  udp.close(sock)
+
+  let assert Error(udp.Closed) = udp.receive_forever(sock, 0)
+}
+
 // ---------- close ---------- //
 
 pub fn close_test() {
   let assert Ok(sock) = udp.open(0)
 
+  udp.close(sock)
   udp.close(sock)
 }
 
