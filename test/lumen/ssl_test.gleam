@@ -58,6 +58,12 @@ pub fn connect_test() {
   let assert Ok(_) = process.receive(test_subject, 5000)
 }
 
+pub fn connect_error_test() {
+  testing.start_ssl_server()
+
+  let assert Error(ssl.Posix(net.Econnrefused)) = ssl.connect(host, 1, False)
+}
+
 pub fn upgrade_error_test() {
   let assert Ok(listener) =
     tcp.ListenOptions(port: 0, ip_address: net.Ipv4Address(127, 0, 0, 1))
@@ -128,6 +134,31 @@ pub fn receive_forever_test() {
     })
 
   let assert Ok(<<"world ssl":utf8>>) = ssl.receive_forever(ssl_socket, 9)
+
+  let assert Ok(_) = process.receive(test_subject, 1000)
+}
+
+pub fn receive_closed_test() {
+  let #(ssl_socket, server_ssl) = testing.ssl_connected_pair()
+
+  let assert Ok(Nil) = ssl.close(server_ssl)
+
+  process.sleep(50)
+
+  let assert Error(ssl.Closed) = ssl.receive(ssl_socket, 1, 1000)
+}
+
+pub fn receive_forever_closed_test() {
+  let #(ssl_socket, server_ssl) = testing.ssl_connected_pair()
+  let test_subject = process.new_subject()
+
+  let _pid =
+    process.spawn(fn() {
+      let assert Ok(Nil) = ssl.close(server_ssl)
+      process.send(test_subject, Nil)
+    })
+
+  let assert Error(ssl.Closed) = ssl.receive_forever(ssl_socket, 1)
 
   let assert Ok(_) = process.receive(test_subject, 1000)
 }
