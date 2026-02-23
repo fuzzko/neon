@@ -20,9 +20,8 @@ pub fn connect(
   |> tcp_connect_(net.port_to_int(port), ip_version, timeout)
 }
 
-pub fn send(socket: Tcp, payload: BitArray) -> Result(Tcp, TcpError) {
+pub fn send(socket: Tcp, payload: BitArray) -> Result(Nil, TcpError) {
   tcp_send_(socket, payload)
-  |> result.replace(socket)
 }
 
 pub fn receive(

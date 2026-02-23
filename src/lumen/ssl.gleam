@@ -1,4 +1,3 @@
-import gleam/result
 import lumen/net
 import lumen/tcp.{type Tcp}
 
@@ -63,9 +62,8 @@ pub fn connect(
   ssl_connect_(host, net.port_to_int(port), verified, timeout)
 }
 
-pub fn send(socket: Ssl, payload: BitArray) -> Result(Ssl, SslError) {
+pub fn send(socket: Ssl, payload: BitArray) -> Result(Nil, SslError) {
   ssl_send_(socket, payload)
-  |> result.replace(socket)
 }
 
 pub fn receive(

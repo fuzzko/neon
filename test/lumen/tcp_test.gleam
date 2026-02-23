@@ -90,8 +90,8 @@ pub fn accept_timeout_test() {
 pub fn send_test() {
   let #(socket, _listener) = connected_pair()
 
-  let assert Ok(returned) = tcp.send(socket, <<"hello":utf8>>)
-  let assert Ok(_) = tcp.shutdown(returned)
+  let assert Ok(Nil) = tcp.send(socket, <<"hello":utf8>>)
+  let assert Ok(Nil) = tcp.shutdown(socket)
 }
 
 pub fn send_closed_test() {

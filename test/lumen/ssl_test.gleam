@@ -108,15 +108,16 @@ pub fn upgrade_error_test() {
 pub fn send_test() {
   let #(ssl_socket, _server_ssl) = testing.ssl_connected_pair()
 
-  let assert Ok(_) = ssl.send(ssl_socket, <<"hello ssl":utf8>>)
-  let assert Ok(_) = ssl.shutdown(ssl_socket)
+  let assert Ok(Nil) = ssl.send(ssl_socket, <<"hello ssl":utf8>>)
+  let assert Ok(Nil) = ssl.shutdown(ssl_socket)
 }
 
 pub fn send_closed_test() {
   let #(ssl_socket, _server_ssl) = testing.ssl_connected_pair()
 
   let assert Ok(_) = ssl.shutdown(ssl_socket)
-  let assert Error(_) = ssl.send(ssl_socket, <<"hello":utf8>>)
+  process.sleep(50)
+  let assert Error(ssl.Closed) = ssl.send(ssl_socket, <<"hello":utf8>>)
 }
 
 // ---------- receive ---------- //
