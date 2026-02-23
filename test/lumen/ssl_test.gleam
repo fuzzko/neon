@@ -68,6 +68,15 @@ pub fn connect_test() {
   let assert Ok(_) = process.receive(test_subject, 5000)
 }
 
+pub fn connect_verify_peer_test() {
+  let assert Ok(port) = net.port(443)
+
+  let assert Ok(_ssl_socket) =
+    ssl.new("gleam.run", port)
+    |> ssl.verify_peer
+    |> ssl.connect
+}
+
 pub fn connect_error_test() {
   testing.start_ssl_server()
 
