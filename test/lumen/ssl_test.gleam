@@ -60,7 +60,10 @@ pub fn connect_test() {
       process.send(test_subject, Nil)
     })
 
-  let assert Ok(_ssl_socket) = ssl.new(host, port_num) |> ssl.connect
+  let assert Ok(_ssl_socket) =
+    ssl.new(host, port_num)
+    |> ssl.verify_none
+    |> ssl.connect
 
   let assert Ok(_) = process.receive(test_subject, 5000)
 }

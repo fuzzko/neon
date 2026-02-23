@@ -67,7 +67,7 @@ pub opaque type ConnectOptions {
 pub fn new(host: String, port: net.Port) -> ConnectOptions {
   let connect = Open(host:, port:)
 
-  ConnectOptions(connect:, verify: Verify(VerifyNone), timeout: net.infinity)
+  ConnectOptions(connect:, verify: Verify(VerifyPeer), timeout: net.infinity)
 }
 
 pub fn from_tcp(socket: Tcp, host: String) -> ConnectOptions {
