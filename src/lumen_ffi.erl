@@ -133,12 +133,14 @@ ssl_connect(Host, Port, Verified, Timeout) ->
     {active, false}
   ],
 
+  HostList = binary_to_list(Host),
+
   SslOpts = case Verified of
     false -> [{verify, verify_none}];
     true -> [
       {verify, verify_peer},
       {cacerts, public_key:cacerts_get()},
-      {server_name_indication, binary_to_list(Host)},
+      {server_name_indication, HostList},
       {customize_hostname_check, [
         {match_fun, public_key:pkix_verify_hostname_match_fun(https)}
       ]
@@ -152,7 +154,7 @@ ssl_connect(Host, Port, Verified, Timeout) ->
     {timeout, Int} -> Int
   end,
 
-  Resp = ssl:connect(Host, Port, Opts, ConnectTimeout),
+  Resp = ssl:connect(HostList, Port, Opts, ConnectTimeout),
   normalise_ssl(Resp).
 
 ssl_upgrade(TcpSocket, Host, Verified, Timeout) ->

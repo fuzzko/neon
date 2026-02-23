@@ -1,4 +1,3 @@
-import gleam/erlang/charlist.{type Charlist}
 import gleam/result
 import lumen/net
 import lumen/tcp.{type Tcp}
@@ -61,9 +60,7 @@ pub fn connect(
   verified: Bool,
   timeout: net.Timeout,
 ) -> Result(Ssl, SslError) {
-  host
-  |> charlist.from_string
-  |> ssl_connect_(net.port_to_int(port), verified, timeout)
+  ssl_connect_(host, net.port_to_int(port), verified, timeout)
 }
 
 pub fn send(socket: Ssl, payload: BitArray) -> Result(Ssl, SslError) {
@@ -97,7 +94,7 @@ fn ssl_upgrade_(
 
 @external(erlang, "lumen_ffi", "ssl_connect")
 fn ssl_connect_(
-  host: Charlist,
+  host: String,
   port: Int,
   verified: Bool,
   timeout: net.Timeout,
