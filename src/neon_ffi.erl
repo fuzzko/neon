@@ -140,15 +140,19 @@ ssl_port(SslSocket) ->
   Resp = ssl:sockname(SslSocket),
   normalise_ssl(Resp).
 
-ssl_connect(TCPSocketOrHost, HostOrPort, Verify, {timeout, Timeout}) ->
-  ssl_connect(TCPSocketOrHost, HostOrPort, Verify, Timeout);
+ssl_connect(TCPSocketOrHost, HostOrPort, Verify, Timeout) ->
+  T = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
+  do_ssl_connect(TCPSocketOrHost, HostOrPort, Verify, T).
 
-ssl_connect(TCPSocket, Host, Verify, Timeout) when is_port(TCPSocket), is_list(Host) ->
+do_ssl_connect(TCPSocket, Host, Verify, Timeout) when is_port(TCPSocket), is_list(Host) ->
   TLSOpts = ssl_connect_opts(Host, Verify),
   Resp = ssl:connect(TCPSocket, TLSOpts, Timeout),
   normalise_ssl(Resp);
 
-ssl_connect(Host, Port, Verify, Timeout) when is_list(Host), is_integer(Port) ->
+do_ssl_connect(Host, Port, Verify, Timeout) when is_list(Host), is_integer(Port) ->
   TLSOpts = ssl_connect_opts(Host, Verify),
   Resp = ssl:connect(Host, Port, TLSOpts, Timeout),
   normalise_ssl(Resp).
