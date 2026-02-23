@@ -28,6 +28,7 @@ pub fn upgrade_test() {
 
   let assert Ok(_ssl_socket) =
     ssl.from_tcp(client_tcp, "127.0.0.1")
+    |> ssl.verify_none
     |> ssl.connect
 
   let assert Ok(_) = process.receive(test_subject, 5000)
@@ -117,6 +118,7 @@ pub fn upgrade_error_test() {
 
   let assert Error(ssl.Closed) =
     ssl.from_tcp(socket, "127.0.0.1")
+    |> ssl.verify_none
     |> ssl.connect
 
   let assert Ok(_) = process.receive(test_subject, 5000)

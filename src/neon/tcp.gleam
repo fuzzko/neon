@@ -10,7 +10,7 @@ pub type TcpError {
   Posix(net.Posix)
 }
 
-pub type ConnectOptions {
+pub opaque type ConnectOptions {
   ConnectOptions(
     address: net.Address,
     port: net.Port,

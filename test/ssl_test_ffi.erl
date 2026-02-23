@@ -44,8 +44,23 @@ ssl_handshake(TcpSocket, Cert, Key, CaCerts, Timeout) ->
     {verify, verify_none}
   ],
 
-  case ssl:handshake(TcpSocket, SslOpts, Timeout) of
-    {ok, SslSocket} -> {ok, SslSocket};
-    {ok, SslSocket, _Ext} -> {ok, SslSocket};
-    {error, Reason} -> {error, Reason}
-  end.
+  Resp = ssl:handshake(TcpSocket, SslOpts, Timeout),
+  normalise_ssl(Resp).
+
+normalise_ssl(ok) -> {ok, nil};
+normalise_ssl({ok, {_Address, Port}}) -> {ok, Port};
+normalise_ssl({ok, SslSocket}) -> {ok, SslSocket};
+normalise_ssl({ok, SslSocket, _Ext}) -> {ok, SslSocket};
+normalise_ssl({error, closed}) -> {error, closed};
+normalise_ssl({error, timeout}) -> {error, timeout};
+normalise_ssl({error, {options, _}}) ->
+  {error, invalid_options};
+normalise_ssl({error, {tls_alert, {Alert, Description}}}) ->
+  Desc = unicode:characters_to_binary(Description),
+  {error, {tls_alert, {Alert, Desc}}};
+normalise_ssl({error, Reason}) when is_atom(Reason) ->
+  {error, {posix, Reason}};
+normalise_ssl({error, Reason}) ->
+  Formatted = ssl:format_error(Reason),
+  Description = unicode:characters_to_binary(Formatted),
+  {error, {ssl_error, Description}}.

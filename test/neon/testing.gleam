@@ -25,6 +25,7 @@ pub fn ssl_connected_pair() -> #(Ssl, Ssl) {
 
   let assert Ok(client_ssl) =
     ssl.from_tcp(client_tcp, "127.0.0.1")
+    |> ssl.verify_none
     |> ssl.connect
 
   let assert Ok(server_ssl) = process.receive(test_subject, 5000)

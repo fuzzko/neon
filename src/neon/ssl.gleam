@@ -73,7 +73,7 @@ pub fn new(host: String, port: net.Port) -> ConnectOptions {
 pub fn from_tcp(socket: Tcp, host: String) -> ConnectOptions {
   let connect = Upgrade(socket:, host:)
 
-  ConnectOptions(connect:, verify: Verify(VerifyNone), timeout: net.infinity)
+  ConnectOptions(connect:, verify: Verify(VerifyPeer), timeout: net.infinity)
 }
 
 pub fn verify_none(opts: ConnectOptions) -> ConnectOptions {

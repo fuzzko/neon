@@ -29,7 +29,7 @@ pub fn send(socket: Udp, payload: BitArray) -> Result(Nil, UdpError) {
 }
 
 pub type ReceiveData {
-  ReceiveData(ip_address: net.IpAddress, port: Int, payload: BitArray)
+  ReceiveData(ip_address: net.IpAddress, port: net.Port, payload: BitArray)
 }
 
 pub fn receive(
@@ -72,7 +72,7 @@ fn udp_receive_(
   socket: Udp,
   length: Int,
   timeout: net.Timeout,
-) -> Result(#(net.IpAddress, Int, BitArray), UdpError)
+) -> Result(#(net.IpAddress, net.Port, BitArray), UdpError)
 
 @external(erlang, "neon_ffi", "udp_close")
 fn udp_close_(socket: Udp) -> Nil

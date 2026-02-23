@@ -46,21 +46,6 @@ inet_ntoa({ipv6_address, A, B, C, D, E, F, G, H}) ->
 
 %%% tcp %%%
 
-% tcp_connect({local, File}, Port, _IpVersion, Timeout) ->
-%   ConnectTimeout = case Timeout of
-%     infinity -> infinity;
-%     {timeout, Int} -> Int
-%   end,
-%
-%   Opts = [
-%     binary,
-%     {packet, raw},
-%     {active, false}
-%   ],
-%
-%   Resp = gen_tcp:connect({local, File}, Port, Opts, ConnectTimeout),
-%   normalise_tcp(Resp);
-
 tcp_connect(Address, Port, IpVersion, Timeout) ->
   Inet = ip_version_to_inet(IpVersion),
 
@@ -152,10 +137,8 @@ ssl_start() ->
   normalise_ssl(Resp).
 
 ssl_port(SslSocket) ->
-  case ssl:sockname(SslSocket) of
-    {ok, {_Address, Port}} -> {ok, Port};
-    {error, Posix} -> {error, {posix, Posix}}
-  end.
+  Resp = ssl:sockname(SslSocket),
+  normalise_ssl(Resp).
 
 ssl_connect(TCPSocketOrHost, HostOrPort, Verify, {timeout, Timeout}) ->
   ssl_connect(TCPSocketOrHost, HostOrPort, Verify, Timeout);
@@ -208,6 +191,7 @@ ssl_send(SslSocket, Packet) ->
   normalise_ssl(Sent).
 
 normalise_ssl(ok) -> {ok, nil};
+normalise_ssl({ok, {_Address, Port}}) -> {ok, Port};
 normalise_ssl({ok, SslSocket}) -> {ok, SslSocket};
 normalise_ssl({error, closed}) -> {error, closed};
 normalise_ssl({error, timeout}) -> {error, timeout};
@@ -232,8 +216,7 @@ udp_connect(UdpSocket, Address, Port) ->
   Addr = case Address of
     {hostname, Hostname} -> unicode:characters_to_list(Hostname);
     {ip_address, {ipv4_address, A, B, C, D}} -> {A, B, C, D};
-    {ip_address, {ipv6_address, A, B, C, D, E, F, G, H}} -> {A, B, C, D, E, F, G, H};
-    {local, File} -> {local, File}
+    {ip_address, {ipv6_address, A, B, C, D, E, F, G, H}} -> {A, B, C, D, E, F, G, H}
   end,
   Resp = gen_udp:connect(UdpSocket, Addr, Port),
   normalise_udp(Resp).
@@ -257,9 +240,9 @@ udp_close(UdpSocket) ->
 
 normalise_udp(ok) -> {ok, nil};
 normalise_udp({ok, {Address, Port, _, Packet}}) ->
-  {ok, {normalise_ip_address(Address), Port, Packet}};
+  {ok, {normalise_ip_address(Address), {port, Port}, Packet}};
 normalise_udp({ok, {Address, Port, Packet}}) ->
-  {ok, {normalise_ip_address(Address), Port, Packet}};
+  {ok, {normalise_ip_address(Address), {port, Port}, Packet}};
 normalise_udp({ok, UdpSocket}) -> {ok, UdpSocket};
 normalise_udp({error, closed} = E) -> E;
 normalise_udp({error, timeout} = E) -> E;
