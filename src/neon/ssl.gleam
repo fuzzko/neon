@@ -1,5 +1,4 @@
 import gleam/erlang/charlist.{type Charlist}
-import gleam/result
 import neon/net
 import neon/tcp.{type Tcp}
 
