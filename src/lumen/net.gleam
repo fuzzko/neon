@@ -3,7 +3,6 @@ import gleam/erlang/charlist.{type Charlist}
 pub opaque type Address {
   Hostname(String)
   IpAddress(IpAddress)
-  Local(String)
 }
 
 pub fn hostname(name: String) -> Address {
@@ -12,10 +11,6 @@ pub fn hostname(name: String) -> Address {
 
 pub fn ip_address(addr: IpAddress) -> Address {
   IpAddress(addr)
-}
-
-pub fn local(path: String) -> Address {
-  Local(path)
 }
 
 pub type IpAddress {

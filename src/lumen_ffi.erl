@@ -45,23 +45,24 @@ inet_ntoa({ipv6_address, A, B, C, D, E, F, G, H}) ->
 
 %%% tcp %%%
 
-tcp_connect({local, File}, Port, IpVersion, Timeout) ->
-  ConnectTimeout = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
-
-  Opts = [
-    binary,
-    {packet, raw},
-    {active, false}
-  ],
-
-  Resp = gen_tcp:connect({local, File}, Port, Opts, ConnectTimeout),
-  normalise_tcp(Resp);
+% tcp_connect({local, File}, Port, _IpVersion, Timeout) ->
+%   ConnectTimeout = case Timeout of
+%     infinity -> infinity;
+%     {timeout, Int} -> Int
+%   end,
+%
+%   Opts = [
+%     binary,
+%     {packet, raw},
+%     {active, false}
+%   ],
+%
+%   Resp = gen_tcp:connect({local, File}, Port, Opts, ConnectTimeout),
+%   normalise_tcp(Resp);
 
 tcp_connect(Address, Port, IpVersion, Timeout) ->
   Inet = ip_version_to_inet(IpVersion),
+
   Addr = case Address of
     {hostname, Hostname} -> unicode:characters_to_list(Hostname);
     {ip_address, {ipv4_address, A, B, C, D}} -> {A, B, C, D};
