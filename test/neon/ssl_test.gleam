@@ -1,9 +1,9 @@
 import gleam/erlang/process
 import gleam/result
-import lumen/net
-import lumen/ssl
-import lumen/tcp
-import lumen/testing
+import neon/net
+import neon/ssl
+import neon/tcp
+import neon/testing
 
 const host = "127.0.0.1"
 

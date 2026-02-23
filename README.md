@@ -1,20 +1,20 @@
-# lumen
+# neon
 
-[![Package Version](https://img.shields.io/hexpm/v/lumen)](https://hex.pm/packages/lumen)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/lumen/)
+[![Package Version](https://img.shields.io/hexpm/v/neon)](https://hex.pm/packages/neon)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/neon/)
 
 ```sh
-gleam add lumen@1
+gleam add neon@1
 ```
 ```gleam
-import lumen
+import neon
 
 pub fn main() -> Nil {
   // TODO: An example of the project in use
 }
 ```
 
-Further documentation can be found at <https://hexdocs.pm/lumen>.
+Further documentation can be found at <https://hexdocs.pm/neon>.
 
 ## Development
 

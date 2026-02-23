@@ -1,4 +1,4 @@
--module(lumen_ffi).
+-module(neon_ffi).
 
 -export([
   inet_port/1,

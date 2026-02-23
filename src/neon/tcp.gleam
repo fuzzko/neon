@@ -1,5 +1,5 @@
 import gleam/result
-import lumen/net
+import neon/net
 
 pub type Tcp
 
@@ -78,7 +78,7 @@ pub fn port(socket: Tcp) -> Result(net.Port, Nil) {
   |> result.try(net.port)
 }
 
-@external(erlang, "lumen_ffi", "tcp_connect")
+@external(erlang, "neon_ffi", "tcp_connect")
 fn tcp_connect_(
   address: net.Address,
   port: Int,
@@ -86,27 +86,27 @@ fn tcp_connect_(
   timeout: net.Timeout,
 ) -> Result(Tcp, TcpError)
 
-@external(erlang, "lumen_ffi", "tcp_recv")
+@external(erlang, "neon_ffi", "tcp_recv")
 fn tcp_receive_(
   socket: Tcp,
   length: Int,
   timeout: net.Timeout,
 ) -> Result(BitArray, TcpError)
 
-@external(erlang, "lumen_ffi", "tcp_send")
+@external(erlang, "neon_ffi", "tcp_send")
 fn tcp_send_(socket: Tcp, packet: BitArray) -> Result(Nil, TcpError)
 
-@external(erlang, "lumen_ffi", "tcp_shutdown")
+@external(erlang, "neon_ffi", "tcp_shutdown")
 fn tcp_shutdown_(socket: Tcp) -> Result(Nil, TcpError)
 
-@external(erlang, "lumen_ffi", "tcp_listen")
+@external(erlang, "neon_ffi", "tcp_listen")
 fn tcp_listen_(port: Int, opts: ListenOptions) -> Result(Tcp, TcpError)
 
-@external(erlang, "lumen_ffi", "tcp_accept")
+@external(erlang, "neon_ffi", "tcp_accept")
 fn tcp_accept_(listener: Tcp, timeout: net.Timeout) -> Result(Tcp, TcpError)
 
-@external(erlang, "lumen_ffi", "tcp_close")
+@external(erlang, "neon_ffi", "tcp_close")
 fn tcp_close_(socket: Tcp) -> Nil
 
-@external(erlang, "lumen_ffi", "inet_port")
+@external(erlang, "neon_ffi", "inet_port")
 fn inet_port_(socket: Tcp) -> Result(Int, Nil)

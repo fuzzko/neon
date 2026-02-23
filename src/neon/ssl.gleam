@@ -1,7 +1,7 @@
 import gleam/erlang/charlist.{type Charlist}
 import gleam/result
-import lumen/net
-import lumen/tcp.{type Tcp}
+import neon/net
+import neon/tcp.{type Tcp}
 
 pub type Ssl
 
@@ -118,7 +118,7 @@ pub fn close(socket: Ssl) -> Result(Nil, SslError) {
   ssl_close_(socket)
 }
 
-@external(erlang, "lumen_ffi", "ssl_start")
+@external(erlang, "neon_ffi", "ssl_start")
 pub fn start() -> Result(Nil, SslError)
 
 pub fn port(socket: Ssl) -> Result(net.Port, SslError) {
@@ -131,7 +131,7 @@ pub fn port(socket: Ssl) -> Result(net.Port, SslError) {
   }
 }
 
-@external(erlang, "lumen_ffi", "ssl_connect")
+@external(erlang, "neon_ffi", "ssl_connect")
 fn ssl_upgrade_(
   socket: Tcp,
   host: Charlist,
@@ -139,7 +139,7 @@ fn ssl_upgrade_(
   timeout: net.Timeout,
 ) -> Result(Ssl, SslError)
 
-@external(erlang, "lumen_ffi", "ssl_connect")
+@external(erlang, "neon_ffi", "ssl_connect")
 fn ssl_connect_(
   host: Charlist,
   port: Int,
@@ -147,21 +147,21 @@ fn ssl_connect_(
   timeout: net.Timeout,
 ) -> Result(Ssl, SslError)
 
-@external(erlang, "lumen_ffi", "ssl_send")
+@external(erlang, "neon_ffi", "ssl_send")
 fn ssl_send_(socket: Ssl, payload: BitArray) -> Result(Nil, SslError)
 
-@external(erlang, "lumen_ffi", "ssl_recv")
+@external(erlang, "neon_ffi", "ssl_recv")
 fn ssl_receive_(
   socket: Ssl,
   length: Int,
   timeout: net.Timeout,
 ) -> Result(BitArray, SslError)
 
-@external(erlang, "lumen_ffi", "ssl_shutdown")
+@external(erlang, "neon_ffi", "ssl_shutdown")
 fn ssl_shutdown_(socket: Ssl) -> Result(Nil, SslError)
 
-@external(erlang, "lumen_ffi", "ssl_close")
+@external(erlang, "neon_ffi", "ssl_close")
 fn ssl_close_(socket: Ssl) -> Result(Nil, SslError)
 
-@external(erlang, "lumen_ffi", "ssl_port")
+@external(erlang, "neon_ffi", "ssl_port")
 fn ssl_port_(socket: Ssl) -> Result(Int, SslError)

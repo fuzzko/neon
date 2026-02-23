@@ -1,7 +1,7 @@
 import gleam/erlang/process
 import gleam/result
-import lumen/net
-import lumen/udp
+import neon/net
+import neon/udp
 
 // ---------- connect ---------- //
 

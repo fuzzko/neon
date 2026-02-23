@@ -1,5 +1,5 @@
 import gleam/result
-import lumen/net
+import neon/net
 
 pub type Udp
 
@@ -54,28 +54,28 @@ pub fn port(socket: Udp) -> Result(net.Port, Nil) {
   |> result.try(net.port)
 }
 
-@external(erlang, "lumen_ffi", "udp_open")
+@external(erlang, "neon_ffi", "udp_open")
 fn udp_open_(port: Int) -> Result(Udp, UdpError)
 
-@external(erlang, "lumen_ffi", "udp_connect")
+@external(erlang, "neon_ffi", "udp_connect")
 fn udp_connect_(
   socket: Udp,
   address: net.Address,
   port: Int,
 ) -> Result(Nil, UdpError)
 
-@external(erlang, "lumen_ffi", "udp_send")
+@external(erlang, "neon_ffi", "udp_send")
 fn udp_send_(socket: Udp, payload: BitArray) -> Result(Nil, UdpError)
 
-@external(erlang, "lumen_ffi", "udp_receive")
+@external(erlang, "neon_ffi", "udp_receive")
 fn udp_receive_(
   socket: Udp,
   length: Int,
   timeout: net.Timeout,
 ) -> Result(#(net.IpAddress, Int, BitArray), UdpError)
 
-@external(erlang, "lumen_ffi", "udp_close")
+@external(erlang, "neon_ffi", "udp_close")
 fn udp_close_(socket: Udp) -> Nil
 
-@external(erlang, "lumen_ffi", "inet_port")
+@external(erlang, "neon_ffi", "inet_port")
 fn inet_port_(socket: Udp) -> Result(Int, Nil)
