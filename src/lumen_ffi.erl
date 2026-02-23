@@ -11,9 +11,9 @@
   tcp_send/2,
   tcp_recv/3,
   tcp_shutdown/1,
+  ssl_start/0,
   ssl_port/1,
   ssl_connect/4,
-  ssl_upgrade/4,
   ssl_send/2,
   ssl_recv/3,
   ssl_shutdown/1,
@@ -147,75 +147,44 @@ normalise_tcp({error, Posix}) -> {error, {posix, Posix}}.
 
 %%% ssl %%%
 
+ssl_start() ->
+  Resp = ssl:start(),
+  normalise_ssl(Resp).
+
 ssl_port(SslSocket) ->
   case ssl:sockname(SslSocket) of
     {ok, {_Address, Port}} -> {ok, Port};
     {error, Posix} -> {error, {posix, Posix}}
   end.
 
-ssl_connect(Host, Port, Verified, Timeout) ->
-  ssl:start(),
+ssl_connect(TCPSocketOrHost, HostOrPort, Verify, {timeout, Timeout}) ->
+  ssl_connect(TCPSocketOrHost, HostOrPort, Verify, Timeout);
 
-  DefaultOpts = [
-    binary,
-    {packet, raw},
-    {active, false}
-  ],
+ssl_connect(TCPSocket, Host, Verify, Timeout) when is_port(TCPSocket), is_list(Host) ->
+  TLSOpts = ssl_connect_opts(Host, Verify),
+  Resp = ssl:connect(TCPSocket, TLSOpts, Timeout),
+  normalise_ssl(Resp);
 
-  HostList = binary_to_list(Host),
-
-  SslOpts = case Verified of
-    false -> [{verify, verify_none}];
-    true -> [
-      {verify, verify_peer},
-      {cacerts, public_key:cacerts_get()},
-      {server_name_indication, HostList},
-      {customize_hostname_check, [
-        {match_fun, public_key:pkix_verify_hostname_match_fun(https)}
-      ]
-    }]
-  end,
-
-  Opts = DefaultOpts ++ SslOpts,
-
-  ConnectTimeout = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
-
-  Resp = ssl:connect(HostList, Port, Opts, ConnectTimeout),
+ssl_connect(Host, Port, Verify, Timeout) when is_list(Host), is_integer(Port) ->
+  TLSOpts = ssl_connect_opts(Host, Verify),
+  Resp = ssl:connect(Host, Port, TLSOpts, Timeout),
   normalise_ssl(Resp).
 
-ssl_upgrade(TcpSocket, Host, Verified, Timeout) ->
-  ssl:start(),
+ssl_connect_opts(_Host, {verify, verify_none}) ->
+  [binary, {packet, raw}, {active, false}, {verify, verify_none}];
 
-  DefaultOpts = [
+ssl_connect_opts(Host, {verify, verify_peer}) ->
+  [
     binary,
     {packet, raw},
-    {active, false}
-  ],
-
-  SslOpts = case Verified of
-    false -> [{verify, verify_none}];
-    true -> [
-      {verify, verify_peer},
-      {cacerts, public_key:cacerts_get()},
-      {server_name_indication, binary_to_list(Host)},
-      {customize_hostname_check, [
-        {match_fun, public_key:pkix_verify_hostname_match_fun(https)}
-      ]
-    }]
-  end,
-
-  Opts = DefaultOpts ++ SslOpts,
-
-  ConnectTimeout = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
-
-  Resp = ssl:connect(TcpSocket, Opts, ConnectTimeout),
-  normalise_ssl(Resp).
+    {active, false},
+    {verify, verify_peer},
+    {cacerts, public_key:cacerts_get()},
+    {server_name_indication, Host},
+    {customize_hostname_check, [
+      {match_fun, public_key:pkix_verify_hostname_match_fun(https)}
+    ]
+  }].
 
 ssl_shutdown(SslSocket) ->
   Shut = ssl:shutdown(SslSocket, read_write),
@@ -242,8 +211,7 @@ normalise_ssl(ok) -> {ok, nil};
 normalise_ssl({ok, SslSocket}) -> {ok, SslSocket};
 normalise_ssl({error, closed}) -> {error, closed};
 normalise_ssl({error, timeout}) -> {error, timeout};
-normalise_ssl({error, {options, Opts}}) ->
-  erlang:display(Opts),
+normalise_ssl({error, {options, _}}) ->
   {error, invalid_options};
 normalise_ssl({error, {tls_alert, {Alert, Description}}}) ->
   Desc = unicode:characters_to_binary(Description),

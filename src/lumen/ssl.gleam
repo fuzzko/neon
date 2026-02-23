@@ -1,3 +1,4 @@
+import gleam/erlang/charlist.{type Charlist}
 import gleam/result
 import lumen/net
 import lumen/tcp.{type Tcp}
@@ -84,17 +85,15 @@ pub fn verify_peer(opts: ConnectOptions) -> ConnectOptions {
 }
 
 pub fn connect(opts: ConnectOptions) -> Result(Ssl, SslError) {
-  let verified = case opts.verify {
-    Verify(VerifyNone) -> False
-    Verify(VerifyPeer) -> True
-  }
-
   case opts.connect {
-    Open(host:, port:) -> {
-      ssl_connect_(host, net.port_to_int(port), verified, opts.timeout)
-    }
+    Open(host:, port:) ->
+      host
+      |> charlist.from_string
+      |> ssl_connect_(net.port_to_int(port), opts.verify, opts.timeout)
     Upgrade(socket:, host:) -> {
-      ssl_upgrade_(socket, host, verified, opts.timeout)
+      let host = charlist.from_string(host)
+
+      ssl_upgrade_(socket, host, opts.verify, opts.timeout)
     }
   }
 }
@@ -119,6 +118,9 @@ pub fn close(socket: Ssl) -> Result(Nil, SslError) {
   ssl_close_(socket)
 }
 
+@external(erlang, "lumen_ffi", "ssl_start")
+pub fn start() -> Result(Nil, SslError)
+
 pub fn port(socket: Ssl) -> Result(net.Port, SslError) {
   case ssl_port_(socket) {
     Ok(num) -> {
@@ -129,19 +131,19 @@ pub fn port(socket: Ssl) -> Result(net.Port, SslError) {
   }
 }
 
-@external(erlang, "lumen_ffi", "ssl_upgrade")
+@external(erlang, "lumen_ffi", "ssl_connect")
 fn ssl_upgrade_(
   socket: Tcp,
-  host: String,
-  verified: Bool,
+  host: Charlist,
+  verify: Verify,
   timeout: net.Timeout,
 ) -> Result(Ssl, SslError)
 
 @external(erlang, "lumen_ffi", "ssl_connect")
 fn ssl_connect_(
-  host: String,
+  host: Charlist,
   port: Int,
-  verified: Bool,
+  verify: Verify,
   timeout: net.Timeout,
 ) -> Result(Ssl, SslError)
 
