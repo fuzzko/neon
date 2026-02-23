@@ -126,13 +126,7 @@ pub fn close(socket: Ssl) -> Result(Nil, SslError) {
 pub fn start() -> Result(Nil, SslError)
 
 pub fn port(socket: Ssl) -> Result(net.Port, SslError) {
-  case ssl_port_(socket) {
-    Ok(num) -> {
-      net.port(num)
-      |> result.map_error(fn(_) { SslError("invalid port") })
-    }
-    Error(ssl_err) -> Error(ssl_err)
-  }
+  ssl_port_(socket)
 }
 
 @external(erlang, "neon_ffi", "ssl_connect")
@@ -168,4 +162,4 @@ fn ssl_shutdown_(socket: Ssl) -> Result(Nil, SslError)
 fn ssl_close_(socket: Ssl) -> Result(Nil, SslError)
 
 @external(erlang, "neon_ffi", "ssl_port")
-fn ssl_port_(socket: Ssl) -> Result(Int, SslError)
+fn ssl_port_(socket: Ssl) -> Result(net.Port, SslError)

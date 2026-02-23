@@ -147,7 +147,7 @@ ssl_connect(TCPSocketOrHost, HostOrPort, Verify, Timeout) ->
   end,
   do_ssl_connect(TCPSocketOrHost, HostOrPort, Verify, T).
 
-do_ssl_connect(TCPSocket, Host, Verify, Timeout) when is_port(TCPSocket), is_list(Host) ->
+do_ssl_connect(TCPSocket, Host, Verify, Timeout) when is_list(Host) ->
   TLSOpts = ssl_connect_opts(Host, Verify),
   Resp = ssl:connect(TCPSocket, TLSOpts, Timeout),
   normalise_ssl(Resp);
@@ -195,7 +195,7 @@ ssl_send(SslSocket, Packet) ->
   normalise_ssl(Sent).
 
 normalise_ssl(ok) -> {ok, nil};
-normalise_ssl({ok, {_Address, Port}}) -> {ok, Port};
+normalise_ssl({ok, {_Address, Port}}) -> {ok, {port, Port}};
 normalise_ssl({ok, SslSocket}) -> {ok, SslSocket};
 normalise_ssl({error, closed}) -> {error, closed};
 normalise_ssl({error, timeout}) -> {error, timeout};
