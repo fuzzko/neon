@@ -68,6 +68,7 @@ pub fn connect_test() {
 }
 
 pub fn connect_verify_peer_test() {
+  let assert Ok(Nil) = ssl.start()
   let assert Ok(port) = net.port(443)
 
   let assert Ok(_ssl_socket) =
