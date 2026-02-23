@@ -26,9 +26,9 @@ pub fn upgrade_test() {
       process.send(test_subject, Nil)
     })
 
-  let assert Ok(timeout) = net.timeout(1000)
   let assert Ok(_ssl_socket) =
-    ssl.upgrade(client_tcp, "127.0.0.1", False, timeout)
+    ssl.from_tcp(client_tcp, "127.0.0.1")
+    |> ssl.connect
 
   let assert Ok(_) = process.receive(test_subject, 5000)
 }
@@ -60,8 +60,7 @@ pub fn connect_test() {
       process.send(test_subject, Nil)
     })
 
-  let assert Ok(timeout) = net.timeout(1000)
-  let assert Ok(_ssl_socket) = ssl.connect(host, port_num, False, timeout)
+  let assert Ok(_ssl_socket) = ssl.new(host, port_num) |> ssl.connect
 
   let assert Ok(_) = process.receive(test_subject, 5000)
 }
@@ -71,9 +70,9 @@ pub fn connect_error_test() {
 
   let assert Ok(port) = net.port(1)
 
-  let assert Ok(timeout) = net.timeout(1000)
   let assert Error(ssl.Posix(net.Econnrefused)) =
-    ssl.connect(host, port, False, timeout)
+    ssl.new(host, port)
+    |> ssl.connect
 }
 
 pub fn upgrade_error_test() {
@@ -104,9 +103,9 @@ pub fn upgrade_error_test() {
     |> tcp.new(port_num)
     |> tcp.connect
 
-  let assert Ok(timeout) = net.timeout(1000)
   let assert Error(ssl.Closed) =
-    ssl.upgrade(socket, "127.0.0.1", False, timeout)
+    ssl.from_tcp(socket, "127.0.0.1")
+    |> ssl.connect
 
   let assert Ok(_) = process.receive(test_subject, 5000)
 }

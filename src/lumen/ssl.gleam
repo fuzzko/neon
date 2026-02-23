@@ -45,22 +45,58 @@ pub type SslError {
   SslError(String)
 }
 
-pub fn upgrade(
-  socket: Tcp,
-  host: String,
-  verified: Bool,
-  timeout: net.Timeout,
-) -> Result(Ssl, SslError) {
-  ssl_upgrade_(socket, host, verified, timeout)
+type VerifyValue {
+  VerifyNone
+  VerifyPeer
 }
 
-pub fn connect(
-  host: String,
-  port: net.Port,
-  verified: Bool,
-  timeout: net.Timeout,
-) -> Result(Ssl, SslError) {
-  ssl_connect_(host, net.port_to_int(port), verified, timeout)
+pub opaque type Verify {
+  Verify(VerifyValue)
+}
+
+type Connect {
+  Open(host: String, port: net.Port)
+  Upgrade(socket: Tcp, host: String)
+}
+
+pub opaque type ConnectOptions {
+  ConnectOptions(connect: Connect, verify: Verify, timeout: net.Timeout)
+}
+
+pub fn new(host: String, port: net.Port) -> ConnectOptions {
+  let connect = Open(host:, port:)
+
+  ConnectOptions(connect:, verify: Verify(VerifyNone), timeout: net.infinity)
+}
+
+pub fn from_tcp(socket: Tcp, host: String) -> ConnectOptions {
+  let connect = Upgrade(socket:, host:)
+
+  ConnectOptions(connect:, verify: Verify(VerifyNone), timeout: net.infinity)
+}
+
+pub fn verify_none(opts: ConnectOptions) -> ConnectOptions {
+  ConnectOptions(..opts, verify: Verify(VerifyNone))
+}
+
+pub fn verify_peer(opts: ConnectOptions) -> ConnectOptions {
+  ConnectOptions(..opts, verify: Verify(VerifyPeer))
+}
+
+pub fn connect(opts: ConnectOptions) -> Result(Ssl, SslError) {
+  let verified = case opts.verify {
+    Verify(VerifyNone) -> False
+    Verify(VerifyPeer) -> True
+  }
+
+  case opts.connect {
+    Open(host:, port:) -> {
+      ssl_connect_(host, net.port_to_int(port), verified, opts.timeout)
+    }
+    Upgrade(socket:, host:) -> {
+      ssl_upgrade_(socket, host, verified, opts.timeout)
+    }
+  }
 }
 
 pub fn send(socket: Ssl, payload: BitArray) -> Result(Nil, SslError) {

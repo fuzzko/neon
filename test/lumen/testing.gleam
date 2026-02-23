@@ -23,10 +23,10 @@ pub fn ssl_connected_pair() -> #(Ssl, Ssl) {
       process.receive_forever(process.new_subject())
     })
 
-  let assert Ok(timeout) = net.timeout(1000)
-
   let assert Ok(client_ssl) =
-    ssl.upgrade(client_tcp, "127.0.0.1", False, timeout)
+    ssl.from_tcp(client_tcp, "127.0.0.1")
+    |> ssl.connect
+
   let assert Ok(server_ssl) = process.receive(test_subject, 5000)
 
   #(client_ssl, server_ssl)
