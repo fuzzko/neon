@@ -56,7 +56,7 @@ pub opaque type Timeout {
 }
 
 pub fn timeout(num: Int) -> Result(Timeout, Nil) {
-  case num > 0 {
+  case num >= 0 {
     True -> Ok(Timeout(num))
     False -> Error(Nil)
   }
