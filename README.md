@@ -7,10 +7,26 @@
 gleam add neon@1
 ```
 ```gleam
-import neon
+import gleam/io
+import neon/net
+import neon/tcp
 
-pub fn main() -> Nil {
-  // TODO: An example of the project in use
+pub fn main() {
+  let assert Ok(port) = net.port(0)
+  let assert Ok(listener) = tcp.listen(port, net.Ipv4Address(127, 0, 0, 1))
+  let assert Ok(port) = tcp.port(listener)
+
+  let address = net.ip_address(net.Ipv4Address(127, 0, 0, 1))
+  let assert Ok(socket) =
+    tcp.new(address, port)
+    |> tcp.connect
+
+  let assert Ok(timeout) = net.timeout(5000)
+  let assert Ok(server) = tcp.accept(listener, timeout)
+  let assert Ok(Nil) = tcp.send(server, <<"hello world":utf8>>)
+
+  let assert Ok(msg) = tcp.receive(socket, 11, timeout)
+  let assert <<"hello world":utf8>> = msg
 }
 ```
 
