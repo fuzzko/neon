@@ -50,10 +50,19 @@ pub fn port_to_int(port: Port) -> Int {
   num
 }
 
-pub type Timeout {
+pub opaque type Timeout {
   Timeout(Int)
   Infinity
 }
+
+pub fn timeout(num: Int) -> Result(Timeout, Nil) {
+  case num > 0 {
+    True -> Ok(Timeout(num))
+    False -> Error(Nil)
+  }
+}
+
+pub const infinity = Infinity
 
 // https://www.erlang.org/doc/apps/kernel/inet.html#module-posix-error-codes
 pub type Posix {

@@ -13,7 +13,8 @@ pub fn ssl_connected_pair() -> #(Ssl, Ssl) {
 
   let _pid =
     process.spawn(fn() {
-      let assert Ok(listener) = tcp.accept(server_tcp, net.Timeout(5000))
+      let assert Ok(timeout) = net.timeout(5000)
+      let assert Ok(listener) = tcp.accept(server_tcp, timeout)
       let assert Ok(server_ssl) =
         ssl_handshake(listener, cert, rsa_pk, ca_certs, 5000)
 
@@ -22,8 +23,10 @@ pub fn ssl_connected_pair() -> #(Ssl, Ssl) {
       process.receive_forever(process.new_subject())
     })
 
+  let assert Ok(timeout) = net.timeout(1000)
+
   let assert Ok(client_ssl) =
-    ssl.upgrade(client_tcp, "127.0.0.1", False, net.Timeout(1000))
+    ssl.upgrade(client_tcp, "127.0.0.1", False, timeout)
   let assert Ok(server_ssl) = process.receive(test_subject, 5000)
 
   #(client_ssl, server_ssl)

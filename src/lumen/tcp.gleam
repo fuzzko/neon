@@ -20,7 +20,7 @@ pub type ConnectOptions {
 }
 
 pub fn new(address: net.Address, port: net.Port) -> ConnectOptions {
-  ConnectOptions(address:, port:, ip_version: net.Ipv4, timeout: net.Infinity)
+  ConnectOptions(address:, port:, ip_version: net.Ipv4, timeout: net.infinity)
 }
 
 pub fn ip_version(
