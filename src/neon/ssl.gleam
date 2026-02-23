@@ -84,6 +84,10 @@ pub fn verify_peer(opts: ConnectOptions) -> ConnectOptions {
   ConnectOptions(..opts, verify: Verify(VerifyPeer))
 }
 
+pub fn timeout(opts: ConnectOptions, timeout: net.Timeout) -> ConnectOptions {
+  ConnectOptions(..opts, timeout:)
+}
+
 pub fn connect(opts: ConnectOptions) -> Result(Ssl, SslError) {
   case opts.connect {
     Open(host:, port:) ->
