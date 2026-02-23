@@ -22,7 +22,8 @@ pub fn ssl_connected_pair() -> #(Ssl, Ssl) {
       process.receive_forever(process.new_subject())
     })
 
-  let assert Ok(client_ssl) = ssl.upgrade(client_tcp, "127.0.0.1", False)
+  let assert Ok(client_ssl) =
+    ssl.upgrade(client_tcp, "127.0.0.1", False, net.Timeout(1000))
   let assert Ok(server_ssl) = process.receive(test_subject, 5000)
 
   #(client_ssl, server_ssl)
@@ -42,7 +43,8 @@ pub fn tcp_connected_pair() -> #(Tcp, Tcp) {
     net.parse_ip_address(host)
     |> result.map(net.ip_address)
 
-  let assert Ok(client_tcp) = tcp.connect(address, port, net.Ipv4)
+  let assert Ok(client_tcp) =
+    tcp.connect(address, port, net.Ipv4, net.Timeout(1000))
 
   #(client_tcp, server_ssl)
 }

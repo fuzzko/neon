@@ -7,12 +7,12 @@
   tcp_accept/2,
   tcp_close/1,
   tcp_listen/2,
-  tcp_connect/3,
+  tcp_connect/4,
   tcp_send/2,
   tcp_recv/3,
   tcp_shutdown/1,
-  ssl_connect/3,
-  ssl_upgrade/3,
+  ssl_connect/4,
+  ssl_upgrade/4,
   ssl_send/2,
   ssl_recv/3,
   ssl_shutdown/1,
@@ -45,7 +45,7 @@ inet_ntoa({ipv6_address, A, B, C, D, E, F, G, H}) ->
 
 %%% tcp %%%
 
-tcp_connect(Address, Port, IpVersion) ->
+tcp_connect(Address, Port, IpVersion, Timeout) ->
   Inet = ip_version_to_inet(IpVersion),
   Addr = case Address of
     {hostname, Hostname} -> unicode:characters_to_list(Hostname);
@@ -54,7 +54,12 @@ tcp_connect(Address, Port, IpVersion) ->
     {local, File} -> {local, File}
   end,
 
-  Resp = gen_tcp:connect(Addr, Port, [binary, {packet, raw}, {active, false}, Inet]),
+  ConnectTimeout = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
+
+  Resp = gen_tcp:connect(Addr, Port, [binary, {packet, raw}, {active, false}, Inet], ConnectTimeout),
   normalise_tcp(Resp).
 
 ip_version_to_inet(ipv6) -> inet6;
@@ -119,10 +124,16 @@ normalise_tcp({error, Posix}) -> {error, {posix, Posix}}.
 
 %%% ssl %%%
 
-ssl_connect(Host, Port, Verified) ->
+ssl_connect(Host, Port, Verified, Timeout) ->
   ssl:start(),
 
-  Opts = case Verified of
+  DefaultOpts = [
+    binary,
+    {packet, raw},
+    {active, false}
+  ],
+
+  SslOpts = case Verified of
     false -> [{verify, verify_none}];
     true -> [
       {verify, verify_peer},
@@ -134,13 +145,26 @@ ssl_connect(Host, Port, Verified) ->
     }]
   end,
 
-  Resp = ssl:connect(Host, Port, [binary, {packet, raw}, {active, false} | Opts]),
+  Opts = DefaultOpts ++ SslOpts,
+
+  ConnectTimeout = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
+
+  Resp = ssl:connect(Host, Port, Opts, ConnectTimeout),
   normalise_ssl(Resp).
 
-ssl_upgrade(TcpSocket, Host, Verified) ->
+ssl_upgrade(TcpSocket, Host, Verified, Timeout) ->
   ssl:start(),
 
-  Opts = case Verified of
+  DefaultOpts = [
+    binary,
+    {packet, raw},
+    {active, false}
+  ],
+
+  SslOpts = case Verified of
     false -> [{verify, verify_none}];
     true -> [
       {verify, verify_peer},
@@ -152,7 +176,14 @@ ssl_upgrade(TcpSocket, Host, Verified) ->
     }]
   end,
 
-  Resp = ssl:connect(TcpSocket, [binary, {packet, raw}, {active, false} | Opts]),
+  Opts = DefaultOpts ++ SslOpts,
+
+  ConnectTimeout = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
+
+  Resp = ssl:connect(TcpSocket, Opts, ConnectTimeout),
   normalise_ssl(Resp).
 
 ssl_shutdown(SslSocket) ->
@@ -180,7 +211,9 @@ normalise_ssl(ok) -> {ok, nil};
 normalise_ssl({ok, SslSocket}) -> {ok, SslSocket};
 normalise_ssl({error, closed}) -> {error, closed};
 normalise_ssl({error, timeout}) -> {error, timeout};
-normalise_ssl({error, {options, _}}) -> {error, invalid_options};
+normalise_ssl({error, {options, Opts}}) ->
+  erlang:display(Opts),
+  {error, invalid_options};
 normalise_ssl({error, {tls_alert, {Alert, Description}}}) ->
   Desc = unicode:characters_to_binary(Description),
   {error, {tls_alert, {Alert, Desc}}};

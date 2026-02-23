@@ -14,9 +14,10 @@ pub fn connect(
   address: net.Address,
   port: net.Port,
   ip_version: net.IpVersion,
+  timeout: net.Timeout,
 ) -> Result(Tcp, TcpError) {
   address
-  |> tcp_connect_(net.port_to_int(port), ip_version)
+  |> tcp_connect_(net.port_to_int(port), ip_version, timeout)
 }
 
 pub fn send(socket: Tcp, payload: BitArray) -> Result(Tcp, TcpError) {
@@ -64,6 +65,7 @@ fn tcp_connect_(
   address: net.Address,
   port: Int,
   ip_version: net.IpVersion,
+  timeout: net.Timeout,
 ) -> Result(Tcp, TcpError)
 
 @external(erlang, "lumen_ffi", "tcp_recv")

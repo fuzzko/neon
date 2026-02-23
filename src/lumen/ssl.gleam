@@ -50,18 +50,20 @@ pub fn upgrade(
   socket: Tcp,
   host: String,
   verified: Bool,
+  timeout: net.Timeout,
 ) -> Result(Ssl, SslError) {
-  ssl_upgrade_(socket, host, verified)
+  ssl_upgrade_(socket, host, verified, timeout)
 }
 
 pub fn connect(
   host: String,
   port: net.Port,
   verified: Bool,
+  timeout: net.Timeout,
 ) -> Result(Ssl, SslError) {
   host
   |> charlist.from_string
-  |> ssl_connect_(net.port_to_int(port), verified)
+  |> ssl_connect_(net.port_to_int(port), verified, timeout)
 }
 
 pub fn send(socket: Ssl, payload: BitArray) -> Result(Ssl, SslError) {
@@ -90,6 +92,7 @@ fn ssl_upgrade_(
   socket: Tcp,
   host: String,
   verified: Bool,
+  timeout: net.Timeout,
 ) -> Result(Ssl, SslError)
 
 @external(erlang, "lumen_ffi", "ssl_connect")
@@ -97,6 +100,7 @@ fn ssl_connect_(
   host: Charlist,
   port: Int,
   verified: Bool,
+  timeout: net.Timeout,
 ) -> Result(Ssl, SslError)
 
 @external(erlang, "lumen_ffi", "ssl_send")
