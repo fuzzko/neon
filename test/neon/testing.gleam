@@ -38,9 +38,7 @@ pub fn tcp_connected_pair() -> #(Tcp, Tcp) {
 
   let assert Ok(port) = net.port(0)
 
-  let assert Ok(server_tcp) =
-    tcp.ListenOptions(ip_address: net.Ipv4Address(127, 0, 0, 1))
-    |> tcp.listen(port, _)
+  let assert Ok(server_tcp) = tcp.listen(port, net.Ipv4Address(127, 0, 0, 1))
 
   let assert Ok(port) = tcp.port(server_tcp)
   let assert Ok(address) =

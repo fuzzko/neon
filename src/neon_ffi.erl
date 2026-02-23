@@ -90,7 +90,7 @@ tcp_send(TcpSocket, Packet) ->
   Sent = gen_tcp:send(TcpSocket, Packet),
   normalise_tcp(Sent).
 
-tcp_listen(Port, {listen_options, IpAddress}) ->
+tcp_listen(Port, IpAddress) ->
   {Inet, Address} = ip_address_and_version(IpAddress),
 
   Options = [

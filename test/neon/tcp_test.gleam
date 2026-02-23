@@ -10,9 +10,7 @@ const host = "127.0.0.1"
 pub fn port_test() {
   let assert Ok(port) = net.port(0)
 
-  let assert Ok(tcp) =
-    tcp.ListenOptions(ip_address: net.Ipv4Address(127, 0, 0, 1))
-    |> tcp.listen(port, _)
+  let assert Ok(tcp) = tcp.listen(port, net.Ipv4Address(127, 0, 0, 1))
 
   let assert Ok(port) = tcp.port(tcp)
 
@@ -22,9 +20,7 @@ pub fn port_test() {
 pub fn connect_test() {
   let assert Ok(port) = net.port(0)
 
-  let assert Ok(tcp_port) =
-    tcp.ListenOptions(ip_address: net.Ipv4Address(127, 0, 0, 1))
-    |> tcp.listen(port, _)
+  let assert Ok(tcp_port) = tcp.listen(port, net.Ipv4Address(127, 0, 0, 1))
 
   let assert Ok(port_num) = tcp.port(tcp_port)
   let assert Ok(address) =
@@ -41,8 +37,7 @@ pub fn connect_ipv6_test() {
   let assert Ok(port) = net.port(0)
 
   let assert Ok(tcp_port) =
-    tcp.ListenOptions(ip_address: net.Ipv6Address(0, 0, 0, 0, 0, 0, 0, 1))
-    |> tcp.listen(port, _)
+    tcp.listen(port, net.Ipv6Address(0, 0, 0, 0, 0, 0, 0, 1))
 
   let assert Ok(port_num) = tcp.port(tcp_port)
   let assert Ok(address) =
@@ -76,8 +71,7 @@ pub fn listen_error_test() {
 
   // Port 1 is privileged so listening should fail
   let assert Error(tcp.Posix(net.Eacces)) =
-    tcp.ListenOptions(ip_address: net.Ipv4Address(127, 0, 0, 1))
-    |> tcp.listen(port, _)
+    tcp.listen(port, net.Ipv4Address(127, 0, 0, 1))
 }
 
 // ---------- accept ---------- //
@@ -85,9 +79,7 @@ pub fn listen_error_test() {
 pub fn accept_timeout_test() {
   let assert Ok(port) = net.port(0)
 
-  let assert Ok(listener) =
-    tcp.ListenOptions(ip_address: net.Ipv4Address(127, 0, 0, 1))
-    |> tcp.listen(port, _)
+  let assert Ok(listener) = tcp.listen(port, net.Ipv4Address(127, 0, 0, 1))
 
   // No client connects, so accept should time out
   let assert Ok(timeout) = net.timeout(50)
@@ -218,9 +210,7 @@ pub fn shutdown_closed_test() {
 fn connected_pair() -> #(Tcp, Tcp) {
   let assert Ok(port) = net.port(0)
 
-  let assert Ok(listener) =
-    tcp.ListenOptions(ip_address: net.Ipv4Address(127, 0, 0, 1))
-    |> tcp.listen(port, _)
+  let assert Ok(listener) = tcp.listen(port, net.Ipv4Address(127, 0, 0, 1))
 
   let assert Ok(port_num) = tcp.port(listener)
   let assert Ok(address) =
