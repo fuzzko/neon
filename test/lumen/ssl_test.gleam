@@ -95,7 +95,9 @@ pub fn upgrade_error_test() {
     |> result.map(net.ip_address)
 
   let assert Ok(socket) =
-    tcp.connect(address, port_num, net.Ipv4, net.Timeout(1000))
+    address
+    |> tcp.new(port_num)
+    |> tcp.connect
 
   let assert Error(ssl.Closed) =
     ssl.upgrade(socket, "127.0.0.1", False, net.Timeout(1000))

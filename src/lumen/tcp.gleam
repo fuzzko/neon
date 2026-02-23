@@ -10,14 +10,33 @@ pub type TcpError {
   Posix(net.Posix)
 }
 
-pub fn connect(
-  address: net.Address,
-  port: net.Port,
+pub type ConnectOptions {
+  ConnectOptions(
+    address: net.Address,
+    port: net.Port,
+    ip_version: net.IpVersion,
+    timeout: net.Timeout,
+  )
+}
+
+pub fn new(address: net.Address, port: net.Port) -> ConnectOptions {
+  ConnectOptions(address:, port:, ip_version: net.Ipv4, timeout: net.Infinity)
+}
+
+pub fn ip_version(
+  opts: ConnectOptions,
   ip_version: net.IpVersion,
-  timeout: net.Timeout,
-) -> Result(Tcp, TcpError) {
-  address
-  |> tcp_connect_(net.port_to_int(port), ip_version, timeout)
+) -> ConnectOptions {
+  ConnectOptions(..opts, ip_version:)
+}
+
+pub fn timeout(opts: ConnectOptions, timeout: net.Timeout) -> ConnectOptions {
+  ConnectOptions(..opts, timeout:)
+}
+
+pub fn connect(opts: ConnectOptions) -> Result(Tcp, TcpError) {
+  opts.address
+  |> tcp_connect_(net.port_to_int(opts.port), opts.ip_version, opts.timeout)
 }
 
 pub fn send(socket: Tcp, payload: BitArray) -> Result(Nil, TcpError) {

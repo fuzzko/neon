@@ -32,7 +32,9 @@ pub fn connect_test() {
     |> result.map(net.ip_address)
 
   let assert Ok(_socket) =
-    tcp.connect(address, port_num, net.Ipv4, net.Timeout(1000))
+    address
+    |> tcp.new(port_num)
+    |> tcp.connect
 }
 
 pub fn connect_ipv6_test() {
@@ -48,7 +50,10 @@ pub fn connect_ipv6_test() {
     |> result.map(net.ip_address)
 
   let assert Ok(_socket) =
-    tcp.connect(address, port_num, net.Ipv6, net.Timeout(1000))
+    address
+    |> tcp.new(port_num)
+    |> tcp.ip_version(net.Ipv6)
+    |> tcp.connect
 }
 
 pub fn connect_error_test() {
@@ -58,7 +63,10 @@ pub fn connect_error_test() {
     |> result.map(net.ip_address)
 
   let assert Error(tcp.Posix(net.Econnrefused)) =
-    tcp.connect(address, port, net.Ipv4, net.Timeout(1000))
+    address
+    |> tcp.new(port)
+    |> tcp.ip_version(net.Ipv4)
+    |> tcp.connect
 }
 
 // ---------- listen ---------- //
@@ -211,7 +219,9 @@ fn connected_pair() -> #(Tcp, Tcp) {
     net.parse_ip_address(host)
     |> result.map(net.ip_address)
   let assert Ok(socket) =
-    tcp.connect(address, port_num, net.Ipv4, net.Timeout(1000))
+    address
+    |> tcp.new(port_num)
+    |> tcp.connect
 
   #(socket, listener)
 }

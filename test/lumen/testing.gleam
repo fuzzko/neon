@@ -43,8 +43,8 @@ pub fn tcp_connected_pair() -> #(Tcp, Tcp) {
     net.parse_ip_address(host)
     |> result.map(net.ip_address)
 
-  let assert Ok(client_tcp) =
-    tcp.connect(address, port, net.Ipv4, net.Timeout(1000))
+  let opts = tcp.new(address, port)
+  let assert Ok(client_tcp) = tcp.connect(opts)
 
   #(client_tcp, server_tcp)
 }
