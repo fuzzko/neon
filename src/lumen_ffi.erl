@@ -45,13 +45,27 @@ inet_ntoa({ipv6_address, A, B, C, D, E, F, G, H}) ->
 
 %%% tcp %%%
 
+tcp_connect({local, File}, Port, IpVersion, Timeout) ->
+  ConnectTimeout = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
+
+  Opts = [
+    binary,
+    {packet, raw},
+    {active, false}
+  ],
+
+  Resp = gen_tcp:connect({local, File}, Port, Opts, ConnectTimeout),
+  normalise_tcp(Resp);
+
 tcp_connect(Address, Port, IpVersion, Timeout) ->
   Inet = ip_version_to_inet(IpVersion),
   Addr = case Address of
     {hostname, Hostname} -> unicode:characters_to_list(Hostname);
     {ip_address, {ipv4_address, A, B, C, D}} -> {A, B, C, D};
-    {ip_address, {ipv6_address, A, B, C, D, E, F, G, H}} -> {A, B, C, D, E, F, G, H};
-    {local, File} -> {local, File}
+    {ip_address, {ipv6_address, A, B, C, D, E, F, G, H}} -> {A, B, C, D, E, F, G, H}
   end,
 
   ConnectTimeout = case Timeout of
@@ -59,7 +73,14 @@ tcp_connect(Address, Port, IpVersion, Timeout) ->
     {timeout, Int} -> Int
   end,
 
-  Resp = gen_tcp:connect(Addr, Port, [binary, {packet, raw}, {active, false}, Inet], ConnectTimeout),
+  Opts = [
+    binary,
+    {packet, raw},
+    {active, false},
+    Inet
+  ],
+
+  Resp = gen_tcp:connect(Addr, Port, Opts, ConnectTimeout),
   normalise_tcp(Resp).
 
 ip_version_to_inet(ipv6) -> inet6;

@@ -76,6 +76,7 @@ pub type Posix {
   Eisconn
   Emsgsize
   Enetdown
+  Enetreset
   Enetunreach
   Enopkg
   Enoprotoopt
@@ -133,6 +134,7 @@ pub type Posix {
   Epipe
   Erange
   Erofs
+  Eshutdown
   Espipe
   Esrch
   Estale
@@ -156,6 +158,7 @@ pub fn posix_to_string(code: Posix) -> String {
     Eisconn -> "eisconn"
     Emsgsize -> "emsgsize"
     Enetdown -> "enetdown"
+    Enetreset -> "enetreset"
     Enetunreach -> "enetunreach"
     Enopkg -> "enopkg"
     Enoprotoopt -> "enoprotoopt"
@@ -213,6 +216,7 @@ pub fn posix_to_string(code: Posix) -> String {
     Epipe -> "epipe"
     Erange -> "erange"
     Erofs -> "erofs"
+    Eshutdown -> "eshutdown"
     Espipe -> "espipe"
     Esrch -> "esrch"
     Estale -> "estale"
