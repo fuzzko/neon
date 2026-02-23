@@ -1,3 +1,4 @@
+import gleam/result
 import lumen/net
 import lumen/tcp.{type Tcp}
 
@@ -41,7 +42,7 @@ pub type SslError {
   InvalidOptions
   Posix(net.Posix)
   TlsAlert(TlsAlert, String)
-  Other(String)
+  SslError(String)
 }
 
 pub fn upgrade(
@@ -82,6 +83,16 @@ pub fn close(socket: Ssl) -> Result(Nil, SslError) {
   ssl_close_(socket)
 }
 
+pub fn port(socket: Ssl) -> Result(net.Port, SslError) {
+  case ssl_port_(socket) {
+    Ok(num) -> {
+      net.port(num)
+      |> result.map_error(fn(_) { SslError("invalid port") })
+    }
+    Error(ssl_err) -> Error(ssl_err)
+  }
+}
+
 @external(erlang, "lumen_ffi", "ssl_upgrade")
 fn ssl_upgrade_(
   socket: Tcp,
@@ -113,3 +124,6 @@ fn ssl_shutdown_(socket: Ssl) -> Result(Nil, SslError)
 
 @external(erlang, "lumen_ffi", "ssl_close")
 fn ssl_close_(socket: Ssl) -> Result(Nil, SslError)
+
+@external(erlang, "lumen_ffi", "ssl_port")
+fn ssl_port_(socket: Ssl) -> Result(Int, SslError)

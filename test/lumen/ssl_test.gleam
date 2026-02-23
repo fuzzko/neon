@@ -212,3 +212,23 @@ pub fn shutdown_closed_test() {
 
   let assert Error(ssl.Closed) = ssl.shutdown(ssl_socket)
 }
+
+// ---------- port ---------- //
+
+pub fn port_test() {
+  let #(client_ssl, server_ssl) = testing.ssl_connected_pair()
+
+  let assert Ok(client_port) = ssl.port(client_ssl)
+  assert net.port_to_int(client_port) > 0
+
+  let assert Ok(server_port) = ssl.port(server_ssl)
+  assert net.port_to_int(server_port) > 0
+}
+
+pub fn port_closed_test() {
+  let #(ssl_socket, _server_ssl) = testing.ssl_connected_pair()
+
+  let assert Ok(Nil) = ssl.close(ssl_socket)
+
+  let assert Error(ssl.Posix(_posix)) = ssl.port(ssl_socket)
+}

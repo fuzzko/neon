@@ -11,6 +11,7 @@
   tcp_send/2,
   tcp_recv/3,
   tcp_shutdown/1,
+  ssl_port/1,
   ssl_connect/4,
   ssl_upgrade/4,
   ssl_send/2,
@@ -146,6 +147,12 @@ normalise_tcp({error, Posix}) -> {error, {posix, Posix}}.
 
 %%% ssl %%%
 
+ssl_port(SslSocket) ->
+  case ssl:sockname(SslSocket) of
+    {ok, {_Address, Port}} -> {ok, Port};
+    {error, Posix} -> {error, {posix, Posix}}
+  end.
+
 ssl_connect(Host, Port, Verified, Timeout) ->
   ssl:start(),
 
@@ -246,7 +253,7 @@ normalise_ssl({error, Reason}) when is_atom(Reason) ->
 normalise_ssl({error, Reason}) ->
   Formatted = ssl:format_error(Reason),
   Description = unicode:characters_to_binary(Formatted),
-  {error, {other, Description}}.
+  {error, {ssl_error, Description}}.
 
 %%% Udp %%%
 
