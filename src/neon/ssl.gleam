@@ -177,6 +177,8 @@ pub fn timeout(opts: ConnectOptions, timeout: net.Timeout) -> ConnectOptions {
 ///
 /// This either opens a new connection or upgrades an existing TCP socket,
 /// depending on whether `new` or `from_tcp` was used to create the options.
+///
+/// `start` must be called before this function.
 pub fn connect(opts: ConnectOptions) -> Result(Ssl, SslError) {
   case opts.connect {
     Open(host:, port:) ->
@@ -324,6 +326,8 @@ pub fn accept(socket: Ssl, timeout: net.Timeout) -> Result(Ssl, SslError) {
 
 /// Performs the server-side TLS handshake on a transport socket
 /// returned by `accept`.
+///
+/// `start` must be called before this function.
 pub fn handshake(socket: Ssl, opts: HandshakeOptions) -> Result(Ssl, SslError) {
   ssl_handshake_(socket, opts.cert, opts.key, opts.cacerts, opts.timeout)
 }
@@ -332,6 +336,8 @@ pub fn handshake(socket: Ssl, opts: HandshakeOptions) -> Result(Ssl, SslError) {
 ///
 /// This is the server-side counterpart to `from_tcp` and is used for
 /// START-TLS upgrades where an existing TCP connection is promoted to TLS.
+///
+/// `start` must be called before this function.
 pub fn handshake_from_tcp(
   socket: Tcp,
   opts: HandshakeOptions,
