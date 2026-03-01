@@ -1,16 +1,16 @@
 -module(tcp_ffi).
 
 -export([
-  tcp_accept/2,
-  tcp_close/1,
-  tcp_listen/2,
-  tcp_connect/4,
-  tcp_send/2,
-  tcp_recv/3,
-  tcp_shutdown/1
+  accept/2,
+  close/1,
+  listen/2,
+  connect/4,
+  send/2,
+  recv/3,
+  shutdown/1
 ]).
 
-tcp_connect(Address, Port, IpVersion, Timeout) ->
+connect(Address, Port, IpVersion, Timeout) ->
   Inet = ip_version_to_inet(IpVersion),
 
   Addr = case Address of
@@ -32,28 +32,28 @@ tcp_connect(Address, Port, IpVersion, Timeout) ->
   ],
 
   Resp = gen_tcp:connect(Addr, Port, Opts, T),
-  normalise_tcp(Resp).
+  normalise(Resp).
 
 ip_version_to_inet(ipv6) -> inet6;
 ip_version_to_inet(ipv4) -> inet.
 
-tcp_shutdown(TcpSocket) ->
+shutdown(TcpSocket) ->
   Shut = gen_tcp:shutdown(TcpSocket, read_write),
-  normalise_tcp(Shut).
+  normalise(Shut).
 
-tcp_recv(TcpSocket, Size, Timeout) ->
+recv(TcpSocket, Size, Timeout) ->
   T = case Timeout of
     infinity -> infinity;
     {timeout, Int} -> Int
   end,
   Resp = gen_tcp:recv(TcpSocket, Size, T),
-  normalise_tcp(Resp).
+  normalise(Resp).
 
-tcp_send(TcpSocket, Packet) ->
+send(TcpSocket, Packet) ->
   Sent = gen_tcp:send(TcpSocket, Packet),
-  normalise_tcp(Sent).
+  normalise(Sent).
 
-tcp_listen(Port, IpAddress) ->
+listen(Port, IpAddress) ->
   {Inet, Address} = ip_address_and_version(IpAddress),
 
   Options = [
@@ -65,29 +65,29 @@ tcp_listen(Port, IpAddress) ->
     Inet
   ],
   Resp = gen_tcp:listen(Port, Options),
-  normalise_tcp(Resp).
+  normalise(Resp).
 
 ip_address_and_version({ipv4_address, A, B, C, D}) ->
   {inet, {A, B, C, D}};
 ip_address_and_version({ipv6_address, A, B, C, D, E, F, G, H}) ->
   {inet6, {A, B, C, D, E, F, G, H}}.
 
-tcp_accept(TcpSocket, Timeout) ->
+accept(TcpSocket, Timeout) ->
   T = case Timeout of
     infinity -> infinity;
     {timeout, Int} -> Int
   end,
   Resp = gen_tcp:accept(TcpSocket, T),
-  normalise_tcp(Resp).
+  normalise(Resp).
 
-tcp_close(TcpSocket) ->
+close(TcpSocket) ->
   gen_tcp:close(TcpSocket),
   nil.
 
-normalise_tcp(ok) -> {ok, nil};
-normalise_tcp({ok, TcpSocket}) -> {ok, TcpSocket};
-normalise_tcp({error, closed} = E) -> E;
-normalise_tcp({error, timeout} = E) -> E;
-normalise_tcp({error, system_limit} = E) -> E;
-normalise_tcp({error, {timeout, _}}) -> {error, timeout};
-normalise_tcp({error, Posix}) -> {error, {posix, Posix}}.
+normalise(ok) -> {ok, nil};
+normalise({ok, TcpSocket}) -> {ok, TcpSocket};
+normalise({error, closed} = E) -> E;
+normalise({error, timeout} = E) -> E;
+normalise({error, system_limit} = E) -> E;
+normalise({error, {timeout, _}}) -> {error, timeout};
+normalise({error, Posix}) -> {error, {posix, Posix}}.
