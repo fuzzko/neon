@@ -25,22 +25,20 @@ port(SslSocket) ->
   Resp = ssl:sockname(SslSocket),
   normalise(Resp).
 
+upgrade(TCPSocket, Host, Verify, MaybeCaCerts, {timeout, Int}) ->
+  upgrade(TCPSocket, Host, Verify, MaybeCaCerts, Int);
+
 upgrade(TCPSocket, Host, Verify, MaybeCaCerts, Timeout) ->
-  T = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
   TLSOpts = connect_opts(Host, Verify, MaybeCaCerts),
-  Resp = ssl:connect(TCPSocket, TLSOpts, T),
+  Resp = ssl:connect(TCPSocket, TLSOpts, Timeout),
   normalise(Resp).
 
+connect(Host, Port, Verify, MaybeCaCerts, {timeout, Int}) ->
+  connect(Host, Port, Verify, MaybeCaCerts, Int);
+
 connect(Host, {port, Port}, Verify, MaybeCaCerts, Timeout) ->
-  T = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
   TLSOpts = connect_opts(Host, Verify, MaybeCaCerts),
-  Resp = ssl:connect(Host, Port, TLSOpts, T),
+  Resp = ssl:connect(Host, Port, TLSOpts, Timeout),
   normalise(Resp).
 
 connect_opts(Host, {verify, verify_none}, _MaybeCaCerts) ->
@@ -90,12 +88,11 @@ close(SslSocket) ->
   Resp = ssl:close(SslSocket),
   normalise(Resp).
 
+recv(SslSocket, Size, {timeout, Int}) ->
+  recv(SslSocket, Size, Int);
+
 recv(SslSocket, Size, Timeout) ->
-  T = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
-  Resp = ssl:recv(SslSocket, Size, T),
+  Resp = ssl:recv(SslSocket, Size, Timeout),
   normalise(Resp).
 
 send(SslSocket, Packet) ->
@@ -116,19 +113,17 @@ listen({port, Port}, IpAddress) ->
   Resp = ssl:listen(Port, Options),
   normalise(Resp).
 
+transport_accept(ListenSocket, {timeout, Int}) ->
+  transport_accept(ListenSocket, Int);
+
 transport_accept(ListenSocket, Timeout) ->
-  T = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
-  Resp = ssl:transport_accept(ListenSocket, T),
+  Resp = ssl:transport_accept(ListenSocket, Timeout),
   normalise(Resp).
 
+handshake(Socket, Cert, Key, MaybeCaCerts, {timeout, Int}) ->
+  handshake(Socket, Cert, Key, MaybeCaCerts, Int);
+
 handshake(Socket, Cert, Key, MaybeCaCerts, Timeout) ->
-  T = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
   ErlKey = private_key_to_erl(Key),
 
   BaseOpts = [
@@ -142,7 +137,7 @@ handshake(Socket, Cert, Key, MaybeCaCerts, Timeout) ->
     {some, CaCerts} -> [{cacerts, CaCerts} | BaseOpts]
   end,
 
-  Resp = ssl:handshake(Socket, Opts, T),
+  Resp = ssl:handshake(Socket, Opts, Timeout),
   normalise(Resp).
 
 private_key_to_erl({rsa_private_key, Der}) -> {'RSAPrivateKey', Der};

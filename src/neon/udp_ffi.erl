@@ -33,12 +33,11 @@ send(UdpSocket, Packet) ->
   Resp = gen_udp:send(UdpSocket, Packet),
   normalise(Resp).
 
+recv(UdpSocket, Length, {timeout, Int}) ->
+  recv(UdpSocket, Length, Int);
+
 recv(UdpSocket, Length, Timeout) ->
-  T = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
-  Resp = gen_udp:recv(UdpSocket, Length, T),
+  Resp = gen_udp:recv(UdpSocket, Length, Timeout),
   normalise(Resp).
 
 close(UdpSocket) ->

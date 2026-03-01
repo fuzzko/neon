@@ -39,7 +39,11 @@ pkix_test_data(KeyType, ServerName) ->
   #{server_config := ServerConf, client_config := ClientConf} =
     public_key:pkix_test_data(Conf),
 
-  {pkix_test_data, conf_to_cert_data(ServerConf), conf_to_cert_data(ClientConf)}.
+  {
+    pkix_test_data,
+    conf_to_cert_data(ServerConf),
+    conf_to_cert_data(ClientConf)
+  }.
 
 conf_to_cert_data(Conf) ->
   Cert = proplists:get_value(cert, Conf),

@@ -13,6 +13,9 @@
   shutdown/1
 ]).
 
+connect(Address, Port, IpVersion, {timeout, Int}) ->
+  connect(Address, Port, IpVersion, Int);
+
 connect(Address, {port, Port}, IpVersion, Timeout) ->
   Inet = ip_version_to_inet(IpVersion),
 
@@ -22,11 +25,6 @@ connect(Address, {port, Port}, IpVersion, Timeout) ->
     {ip_address, {ipv6_address, A, B, C, D, E, F, G, H}} -> {A, B, C, D, E, F, G, H}
   end,
 
-  T = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
-
   Opts = [
     binary,
     {packet, raw},
@@ -34,7 +32,7 @@ connect(Address, {port, Port}, IpVersion, Timeout) ->
     Inet
   ],
 
-  Resp = gen_tcp:connect(Addr, Port, Opts, T),
+  Resp = gen_tcp:connect(Addr, Port, Opts, Timeout),
   normalise(Resp).
 
 ip_version_to_inet(ipv6) -> inet6;
@@ -56,12 +54,11 @@ shutdown(TcpSocket) ->
   Shut = gen_tcp:shutdown(TcpSocket, read_write),
   normalise(Shut).
 
+recv(TcpSocket, Size, {timeout, Int}) ->
+  recv(TcpSocket, Size, Int);
+
 recv(TcpSocket, Size, Timeout) ->
-  T = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
-  Resp = gen_tcp:recv(TcpSocket, Size, T),
+  Resp = gen_tcp:recv(TcpSocket, Size, Timeout),
   normalise(Resp).
 
 send(TcpSocket, Packet) ->
@@ -87,12 +84,11 @@ ip_address_and_version({ipv4_address, A, B, C, D}) ->
 ip_address_and_version({ipv6_address, A, B, C, D, E, F, G, H}) ->
   {inet6, {A, B, C, D, E, F, G, H}}.
 
+accept(TcpSocket, {timeout, Int}) ->
+  accept(TcpSocket, Int);
+
 accept(TcpSocket, Timeout) ->
-  T = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
-  Resp = gen_tcp:accept(TcpSocket, T),
+  Resp = gen_tcp:accept(TcpSocket, Timeout),
   normalise(Resp).
 
 close(TcpSocket) ->
