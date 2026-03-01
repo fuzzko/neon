@@ -1,33 +1,58 @@
 import gleam/erlang/charlist.{type Charlist}
+import gleam/option.{type Option, None, Some}
 
+/// A network address, either a hostname or an IP address.
 pub opaque type Address {
   Hostname(String)
   IpAddress(IpAddress)
 }
 
+@internal
+pub fn address_to_ip_version(address: Address) -> Option(IpVersion) {
+  case address {
+    Hostname(_) -> None
+    IpAddress(Ipv4Address(..)) -> Some(Ipv4)
+    IpAddress(Ipv6Address(..)) -> Some(Ipv6)
+  }
+}
+
+/// Creates an address from a hostname string.
 pub fn hostname(name: String) -> Address {
   Hostname(name)
 }
 
+/// Creates an address from an IP address.
 pub fn ip_address(addr: IpAddress) -> Address {
   IpAddress(addr)
 }
 
+/// An IPv4 or IPv6 address.
+///
+/// This type is opaque. Use `ipv4_address`, `ipv6_address`, or
+/// `parse_ip_address` to construct values.
 pub opaque type IpAddress {
   Ipv4Address(Int, Int, Int, Int)
   Ipv6Address(Int, Int, Int, Int, Int, Int, Int, Int)
 }
 
+/// Parses a string as an IP address.
+///
+/// Accepts both IPv4 (e.g. `"127.0.0.1"`) and IPv6 (e.g. `"::1"`) formats.
 pub fn parse_ip_address(address: String) -> Result(IpAddress, Posix) {
   address
   |> charlist.from_string
   |> inet_parse_address
 }
 
+/// Converts an IP address to its string representation.
 pub fn ip_address_to_string(address: IpAddress) -> String {
   inet_ntoa(address)
 }
 
+/// Creates an IPv4 address from four octets.
+///
+/// Each octet must be in the range 0-255. Returns `Error(Nil)` if any
+/// octet is out of range.
 pub fn ipv4_address(a: Int, b: Int, c: Int, d: Int) -> Result(IpAddress, Nil) {
   case
     a >= 0 && a <= 255,
@@ -40,6 +65,21 @@ pub fn ipv4_address(a: Int, b: Int, c: Int, d: Int) -> Result(IpAddress, Nil) {
   }
 }
 
+/// Creates an IPv6 address from eight 16-bit groups.
+///
+/// Each group must be in the range 0-65535. Returns `Error(Nil)` if any
+/// group is out of range.
+///
+/// ```gleam
+/// // The loopback address ::1
+/// let assert Ok(addr) = ipv6_address(0, 0, 0, 0, 0, 0, 0, 1)
+///
+/// // fe80::1 (link-local)
+/// let assert Ok(addr) = ipv6_address(0xfe80, 0, 0, 0, 0, 0, 0, 1)
+///
+/// // 2001:db8::1 (documentation range)
+/// let assert Ok(addr) = ipv6_address(0x2001, 0x0db8, 0, 0, 0, 0, 0, 1)
+/// ```
 pub fn ipv6_address(
   a: Int,
   b: Int,
@@ -66,6 +106,7 @@ pub fn ipv6_address(
   }
 }
 
+/// Returns the IP version of an IP address.
 pub fn ip_address_version(address: IpAddress) -> IpVersion {
   case address {
     Ipv4Address(..) -> Ipv4
@@ -73,15 +114,24 @@ pub fn ip_address_version(address: IpAddress) -> IpVersion {
   }
 }
 
+/// The IP version to use for a socket.
 pub type IpVersion {
   Ipv4
   Ipv6
 }
 
+/// A port number in the range 0-65535.
+///
+/// This type is opaque. Use `port` to construct values and `port_to_int`
+/// to extract the underlying integer.
 pub opaque type Port {
   Port(Int)
 }
 
+/// Creates a port from an integer.
+///
+/// The value must be in the range 0-65535. Returns `Error(Nil)` if the
+/// value is out of range.
 pub fn port(num: Int) -> Result(Port, Nil) {
   case num >= 0, num <= 65_535 {
     True, True -> Ok(Port(num))
@@ -89,17 +139,26 @@ pub fn port(num: Int) -> Result(Port, Nil) {
   }
 }
 
+/// Returns the integer value of a port.
 pub fn port_to_int(port: Port) -> Int {
   let Port(num) = port
 
   num
 }
 
+/// A timeout value for socket operations.
+///
+/// This type is opaque. Use `timeout` to create a finite timeout or
+/// `infinity` for no timeout.
 pub opaque type Timeout {
   Timeout(Int)
   Infinity
 }
 
+/// Creates a timeout from a number of milliseconds.
+///
+/// The value must be non-negative. Returns `Error(Nil)` if the value
+/// is negative.
 pub fn timeout(num: Int) -> Result(Timeout, Nil) {
   case num >= 0 {
     True -> Ok(Timeout(num))
@@ -107,9 +166,13 @@ pub fn timeout(num: Int) -> Result(Timeout, Nil) {
   }
 }
 
+/// An infinite timeout.
 pub const infinity = Infinity
 
-// https://www.erlang.org/doc/apps/kernel/inet.html#module-posix-error-codes
+/// POSIX error codes returned by the operating system.
+///
+/// See the [Erlang inet documentation](https://www.erlang.org/doc/apps/kernel/inet.html#module-posix-error-codes)
+/// for descriptions of each error code.
 pub type Posix {
   Eaddrinuse
   Eaddrnotavail
@@ -191,6 +254,7 @@ pub type Posix {
   Exdev
 }
 
+/// Converts a POSIX error code to its string representation.
 pub fn posix_to_string(code: Posix) -> String {
   case code {
     Eaddrinuse -> "eaddrinuse"

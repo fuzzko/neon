@@ -1,16 +1,28 @@
+import gleam/option
 import gleam/result
 import neon/net
 
+/// A TCP socket.
 pub type Tcp
 
+/// Errors that can occur during TCP operations.
 pub type TcpError {
+  /// The connection was closed.
   Closed
+  /// The operation timed out.
   Timeout
+  /// The erlang VM can't allocate more resources for network operations.
   SystemLimit
+  /// A POSIX error.
   Posix(net.Posix)
+  /// A generic TCP error with a description.
   TcpError(String)
 }
 
+/// Options for establishing a TCP connection.
+///
+/// Create with `new`, then optionally configure with `ip_version` and
+/// `timeout` before passing to `connect`.
 pub opaque type ConnectOptions {
   ConnectOptions(
     address: net.Address,
@@ -20,10 +32,18 @@ pub opaque type ConnectOptions {
   )
 }
 
+/// Creates connection options for the given address and port.
+///
+/// Defaults to IPv4 if the address is a `net.Hostname` and an infinite timeout.
 pub fn new(address: net.Address, port: net.Port) -> ConnectOptions {
-  ConnectOptions(address:, port:, ip_version: net.Ipv4, timeout: net.infinity)
+  let ip_version =
+    net.address_to_ip_version(address)
+    |> option.unwrap(net.Ipv4)
+
+  ConnectOptions(address:, port:, ip_version:, timeout: net.infinity)
 }
 
+/// Sets the IP version for the connection.
 pub fn ip_version(
   opts: ConnectOptions,
   ip_version: net.IpVersion,
@@ -31,19 +51,26 @@ pub fn ip_version(
   ConnectOptions(..opts, ip_version:)
 }
 
+/// Sets the connection timeout.
 pub fn timeout(opts: ConnectOptions, timeout: net.Timeout) -> ConnectOptions {
   ConnectOptions(..opts, timeout:)
 }
 
+/// Establishes a TCP connection using the given options.
 pub fn connect(opts: ConnectOptions) -> Result(Tcp, TcpError) {
   opts.address
   |> tcp_connect_(net.port_to_int(opts.port), opts.ip_version, opts.timeout)
 }
 
+/// Sends data over a TCP socket.
 pub fn send(socket: Tcp, payload: BitArray) -> Result(Nil, TcpError) {
   tcp_send_(socket, payload)
 }
 
+/// Receives data from a TCP socket.
+///
+/// The `length` parameter specifies the number of bytes to receive. Use `0`
+/// to receive whatever data is available. Must be non-negative.
 pub fn receive(
   socket: Tcp,
   length: Int,
@@ -55,10 +82,12 @@ pub fn receive(
   }
 }
 
+/// Shuts down the socket for both reading and writing.
 pub fn shutdown(socket: Tcp) -> Result(Nil, TcpError) {
   tcp_shutdown_(socket)
 }
 
+/// Creates a listening TCP socket bound to the given port and IP address.
 pub fn listen(
   port: net.Port,
   ip_address: net.IpAddress,
@@ -68,14 +97,23 @@ pub fn listen(
   |> tcp_listen_(ip_address)
 }
 
+/// Accepts an incoming connection on a listening socket.
+///
+/// Blocks until a connection arrives or the timeout expires.
 pub fn accept(socket: Tcp, timeout: net.Timeout) -> Result(Tcp, TcpError) {
   tcp_accept_(socket, timeout)
 }
 
+/// Closes a TCP socket.
+///
+/// This function is idempotent and always returns `Nil`.
 pub fn close(socket: Tcp) -> Nil {
   tcp_close_(socket)
 }
 
+/// Returns the port number assigned to a socket by the operating system.
+///
+/// Useful when listening on port 0 (OS-assigned).
 pub fn port(socket: Tcp) -> Result(net.Port, Nil) {
   inet_port_(socket)
   |> result.try(net.port)
