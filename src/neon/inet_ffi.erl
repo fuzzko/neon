@@ -14,7 +14,7 @@ inet_port(Socket) ->
 
 inet_parse_address(Address) ->
   case inet:parse_address(Address) of
-    {ok, Tuple} -> {ok, normalise_ip_address(Tuple)};
+    {ok, Tuple} -> {ok, to_ip_address(Tuple)};
     {error, einval} -> {error, einval}
   end.
 
@@ -23,7 +23,7 @@ inet_ntoa({ipv4_address, A, B, C, D}) ->
 inet_ntoa({ipv6_address, A, B, C, D, E, F, G, H}) ->
   list_to_binary(inet:ntoa({A, B, C, D, E, F, G, H})).
 
-normalise_ip_address({A, B, C, D}) ->
+to_ip_address({A, B, C, D}) ->
   {ipv4_address, A, B, C, D};
-normalise_ip_address({A, B, C, D, E, F, G, H}) ->
+to_ip_address({A, B, C, D, E, F, G, H}) ->
   {ipv6_address, A, B, C, D, E, F, G, H}.
