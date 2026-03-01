@@ -38,7 +38,8 @@ pub fn tcp_connected_pair() -> #(Tcp, Tcp) {
 
   let assert Ok(port) = net.port(0)
 
-  let assert Ok(server_tcp) = tcp.listen(port, net.Ipv4Address(127, 0, 0, 1))
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
+  let assert Ok(server_tcp) = tcp.listen(port, loopback)
 
   let assert Ok(port) = tcp.port(server_tcp)
   let assert Ok(address) =

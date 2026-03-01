@@ -13,7 +13,7 @@ pub fn ip_address(addr: IpAddress) -> Address {
   IpAddress(addr)
 }
 
-pub type IpAddress {
+pub opaque type IpAddress {
   Ipv4Address(Int, Int, Int, Int)
   Ipv6Address(Int, Int, Int, Int, Int, Int, Int, Int)
 }
@@ -26,6 +26,44 @@ pub fn parse_ip_address(address: String) -> Result(IpAddress, Posix) {
 
 pub fn ip_address_to_string(address: IpAddress) -> String {
   inet_ntoa(address)
+}
+
+pub fn ipv4_address(a: Int, b: Int, c: Int, d: Int) -> Result(IpAddress, Nil) {
+  case
+    a >= 0 && a <= 255,
+    b >= 0 && b <= 255,
+    c >= 0 && c <= 255,
+    d >= 0 && d <= 255
+  {
+    True, True, True, True -> Ok(Ipv4Address(a, b, c, d))
+    _, _, _, _ -> Error(Nil)
+  }
+}
+
+pub fn ipv6_address(
+  a: Int,
+  b: Int,
+  c: Int,
+  d: Int,
+  e: Int,
+  f: Int,
+  g: Int,
+  h: Int,
+) -> Result(IpAddress, Nil) {
+  case
+    a >= 0 && a <= 65_535,
+    b >= 0 && b <= 65_535,
+    c >= 0 && c <= 65_535,
+    d >= 0 && d <= 65_535,
+    e >= 0 && e <= 65_535,
+    f >= 0 && f <= 65_535,
+    g >= 0 && g <= 65_535,
+    h >= 0 && h <= 65_535
+  {
+    True, True, True, True, True, True, True, True ->
+      Ok(Ipv6Address(a, b, c, d, e, f, g, h))
+    _, _, _, _, _, _, _, _ -> Error(Nil)
+  }
 }
 
 pub type IpVersion {

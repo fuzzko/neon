@@ -95,11 +95,13 @@ pub fn receive_test() {
   let assert Ok(Nil) = udp.send(sender, <<"hello":utf8>>)
 
   let assert Ok(timeout) = net.timeout(1000)
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
   let assert Ok(udp.ReceiveData(
-    ip_address: net.Ipv4Address(127, 0, 0, 1),
+    ip_address: recv_ip,
     port: _sender_port,
     payload: <<"hello":utf8>>,
   )) = udp.receive(receiver, 0, timeout)
+  assert recv_ip == loopback
 }
 
 pub fn receive_timeout_test() {
@@ -129,11 +131,13 @@ pub fn receive_forever_test() {
       process.send(test_subject, Nil)
     })
 
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
   let assert Ok(udp.ReceiveData(
-    ip_address: net.Ipv4Address(127, 0, 0, 1),
+    ip_address: recv_ip,
     port: _sender_port,
     payload: <<"world":utf8>>,
   )) = udp.receive(receiver, 0, net.infinity)
+  assert recv_ip == loopback
 
   // Wait for the sender process to finish
   let assert Ok(_) = process.receive(test_subject, 1000)
