@@ -3,8 +3,8 @@
 -export([
   start/0,
   port/1,
-  connect/4,
-  upgrade/4,
+  connect/5,
+  upgrade/5,
   send/2,
   recv/3,
   shutdown/1,
@@ -25,25 +25,25 @@ port(SslSocket) ->
   Resp = ssl:sockname(SslSocket),
   normalise(Resp).
 
-upgrade(TCPSocket, Host, Verify, Timeout) ->
+upgrade(TCPSocket, Host, Verify, MaybeCaCerts, Timeout) ->
   T = case Timeout of
     infinity -> infinity;
     {timeout, Int} -> Int
   end,
-  TLSOpts = connect_opts(Host, Verify),
+  TLSOpts = connect_opts(Host, Verify, MaybeCaCerts),
   Resp = ssl:connect(TCPSocket, TLSOpts, T),
   normalise(Resp).
 
-connect(Host, {port, Port}, Verify, Timeout) ->
+connect(Host, {port, Port}, Verify, MaybeCaCerts, Timeout) ->
   T = case Timeout of
     infinity -> infinity;
     {timeout, Int} -> Int
   end,
-  TLSOpts = connect_opts(Host, Verify),
+  TLSOpts = connect_opts(Host, Verify, MaybeCaCerts),
   Resp = ssl:connect(Host, Port, TLSOpts, T),
   normalise(Resp).
 
-connect_opts(Host, {verify, verify_none}) ->
+connect_opts(Host, {verify, verify_none}, _MaybeCaCerts) ->
   [
     binary,
     {packet, raw},
@@ -52,13 +52,18 @@ connect_opts(Host, {verify, verify_none}) ->
     {server_name_indication, Host}
   ];
 
-connect_opts(Host, {verify, verify_peer}) ->
+connect_opts(Host, {verify, verify_peer}, CaCerts) ->
+  Certs = case CaCerts of
+    {some, C} -> C;
+    none -> public_key:cacerts_get()
+  end,
+
   [
     binary,
     {packet, raw},
     {active, false},
     {verify, verify_peer},
-    {cacerts, public_key:cacerts_get()},
+    {cacerts, Certs},
     {server_name_indication, Host},
     {customize_hostname_check, [
       {match_fun, public_key:pkix_verify_hostname_match_fun(https)}

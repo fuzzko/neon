@@ -5,12 +5,14 @@ import neon/ssl.{type Ssl}
 import neon/tcp
 import neon/testing
 
-const host = "127.0.0.1"
+const host = "localhost"
+
+const loopback_str = "127.0.0.1"
 
 // ---------- upgrade ---------- //
 
 pub fn upgrade_test() {
-  let data = testing.pkix_test_data(testing.rsa(2048))
+  let data = testing.pkix_test_data(testing.rsa(2048), host)
 
   // Set up a TCP listener, connect a client, then upgrade both sides to SSL
   let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
@@ -20,7 +22,7 @@ pub fn upgrade_test() {
 
   let hs_opts =
     ssl.handshake_options(data.server.cert, data.server.key)
-    |> ssl.cacerts(data.server.cacerts)
+    |> ssl.handshake_cacerts(data.server.cacerts)
 
   let test_subject = process.new_subject()
 
@@ -35,7 +37,7 @@ pub fn upgrade_test() {
     })
 
   let assert Ok(address) =
-    net.parse_ip_address(host)
+    net.parse_ip_address(loopback_str)
     |> result.map(net.ip_address)
 
   let assert Ok(client_tcp) =
@@ -55,7 +57,7 @@ pub fn upgrade_test() {
 // ---------- connect ---------- //
 
 pub fn connect_test() {
-  let data = testing.pkix_test_data(testing.rsa(2048))
+  let data = testing.pkix_test_data(testing.rsa(2048), host)
 
   let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
   let assert Ok(port) = net.port(0)
@@ -65,7 +67,7 @@ pub fn connect_test() {
 
   let hs_opts =
     ssl.handshake_options(data.server.cert, data.server.key)
-    |> ssl.cacerts(data.server.cacerts)
+    |> ssl.handshake_cacerts(data.server.cacerts)
 
   let test_subject = process.new_subject()
 
@@ -86,11 +88,38 @@ pub fn connect_test() {
 }
 
 pub fn connect_verify_peer_test() {
-  let assert Ok(port) = net.port(443)
+  let data = testing.pkix_test_data(testing.rsa(2048), host)
+
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
+  let assert Ok(port) = net.port(0)
+
+  let assert Ok(tcp_listener) = tcp.listen(port, loopback)
+  let assert Ok(port_num) = tcp.port(tcp_listener)
+
+  let hs_opts =
+    ssl.handshake_options(data.server.cert, data.server.key)
+    |> ssl.handshake_cacerts(data.server.cacerts)
+
+  let _pid =
+    process.spawn(fn() {
+      let assert Ok(timeout) = net.timeout(5000)
+      let assert Ok(accepted) = tcp.accept(tcp_listener, timeout)
+      let assert Ok(_server_ssl) = ssl.handshake_from_tcp(accepted, hs_opts)
+    })
+
+  let assert Ok(address) =
+    net.parse_ip_address(loopback_str)
+    |> result.map(net.ip_address)
+
+  let assert Ok(client_tcp) =
+    address
+    |> tcp.new(port_num)
+    |> tcp.connect
 
   let assert Ok(_ssl_socket) =
-    ssl.new("gleam.run", port)
+    ssl.from_tcp(client_tcp, host)
     |> ssl.verify_peer
+    |> ssl.connect_cacerts(data.server.cacerts)
     |> ssl.connect
 }
 
@@ -121,7 +150,7 @@ pub fn upgrade_error_test() {
     })
 
   let assert Ok(address) =
-    net.parse_ip_address(host)
+    net.parse_ip_address(loopback_str)
     |> result.map(net.ip_address)
 
   let assert Ok(socket) =
@@ -130,7 +159,7 @@ pub fn upgrade_error_test() {
     |> tcp.connect
 
   let assert Error(ssl.Closed) =
-    ssl.from_tcp(socket, "127.0.0.1")
+    ssl.from_tcp(socket, host)
     |> ssl.verify_none
     |> ssl.connect
 
@@ -394,7 +423,7 @@ pub fn accept_timeout_test() {
 // ---------- server: handshake send/receive ---------- //
 
 pub fn handshake_send_receive_test() {
-  let data = testing.pkix_test_data(testing.rsa(2048))
+  let data = testing.pkix_test_data(testing.rsa(2048), host)
 
   let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
   let assert Ok(port) = net.port(0)
@@ -404,7 +433,7 @@ pub fn handshake_send_receive_test() {
 
   let hs_opts =
     ssl.handshake_options(data.server.cert, data.server.key)
-    |> ssl.cacerts(data.server.cacerts)
+    |> ssl.handshake_cacerts(data.server.cacerts)
 
   let test_subject = process.new_subject()
 
@@ -442,7 +471,7 @@ pub fn handshake_send_receive_test() {
 // ---------- server: handshake_tcp send/receive ---------- //
 
 pub fn handshake_tcp_send_receive_test() {
-  let data = testing.pkix_test_data(testing.rsa(2048))
+  let data = testing.pkix_test_data(testing.rsa(2048), host)
 
   let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
   let assert Ok(port) = net.port(0)
@@ -451,7 +480,7 @@ pub fn handshake_tcp_send_receive_test() {
 
   let hs_opts =
     ssl.handshake_options(data.server.cert, data.server.key)
-    |> ssl.cacerts(data.server.cacerts)
+    |> ssl.handshake_cacerts(data.server.cacerts)
 
   let test_subject = process.new_subject()
 
@@ -474,7 +503,7 @@ pub fn handshake_tcp_send_receive_test() {
     })
 
   let assert Ok(address) =
-    net.parse_ip_address(host)
+    net.parse_ip_address(loopback_str)
     |> result.map(net.ip_address)
 
   let assert Ok(client_tcp) =
@@ -500,7 +529,7 @@ pub fn handshake_tcp_send_receive_test() {
 }
 
 fn connected_pair() -> #(Ssl, Ssl) {
-  let data = testing.pkix_test_data(testing.rsa(2048))
+  let data = testing.pkix_test_data(testing.rsa(2048), host)
 
   let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
   let assert Ok(port) = net.port(0)
@@ -510,7 +539,7 @@ fn connected_pair() -> #(Ssl, Ssl) {
 
   let hs_opts =
     ssl.handshake_options(data.server.cert, data.server.key)
-    |> ssl.cacerts(data.server.cacerts)
+    |> ssl.handshake_cacerts(data.server.cacerts)
 
   let test_subject = process.new_subject()
 

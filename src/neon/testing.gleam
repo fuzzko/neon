@@ -35,7 +35,11 @@ pub fn ec(curve: EcCurve) -> KeyType {
 
 /// Generates test certificate data for the given key type.
 ///
+/// The `server_name` parameter sets the dNSName in the server's peer
+/// certificate. Use this same name as the SNI hostname when connecting
+/// with `verify_peer` so the hostname check passes.
+///
 /// Both server and client certificate chains are generated with the
 /// same key type, no intermediate CAs, and a direct root-to-peer chain.
 @external(erlang, "public_key_ffi", "pkix_test_data")
-pub fn pkix_test_data(key_type: KeyType) -> PkixTestData
+pub fn pkix_test_data(key_type: KeyType, server_name: String) -> PkixTestData

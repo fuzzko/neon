@@ -1,24 +1,39 @@
 -module(public_key_ffi).
 
+-include_lib("public_key/include/public_key.hrl").
+
 -export([
-  pkix_test_data/1
+  pkix_test_data/2
 ]).
 
-pkix_test_data(KeyType) ->
+pkix_test_data(KeyType, ServerName) ->
   KeyOpt = key_type_to_otp(KeyType),
+  ServerNameCharlist = unicode:characters_to_list(ServerName),
   CertOpts = case KeyType of
     {ec, _} -> [{key, KeyOpt}, {digest, sha256}];
     _       -> [{key, KeyOpt}]
   end,
+
+  % https://www.erlang.org/doc/apps/public_key/public_key.html#test-data-api
+  SanExt = #'Extension'{
+    extnID = ?'id-ce-subjectAltName',
+    extnValue = [{dNSName, ServerNameCharlist}],
+    critical = false
+  },
+  PeerOpts = [{extensions, [SanExt]} | CertOpts],
   ChainOpts = #{
     root => CertOpts,
     intermediates => [],
-    peer => CertOpts
+    peer => PeerOpts
   },
 
   Conf = #{
     server_chain => ChainOpts,
-    client_chain => ChainOpts
+    client_chain => #{
+      root => CertOpts,
+      intermediates => [],
+      peer => CertOpts
+    }
   },
 
   #{server_config := ServerConf, client_config := ClientConf} =

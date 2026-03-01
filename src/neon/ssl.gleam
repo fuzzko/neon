@@ -104,7 +104,12 @@ type Connect {
 
 /// Options for establishing an SSL/TLS connection.
 pub opaque type ConnectOptions {
-  ConnectOptions(connect: Connect, verify: Verify, timeout: net.Timeout)
+  ConnectOptions(
+    connect: Connect,
+    verify: Verify,
+    cacerts: Option(List(BitArray)),
+    timeout: net.Timeout,
+  )
 }
 
 /// Creates connection options for a fresh SSL/TLS connection to the given
@@ -114,7 +119,12 @@ pub opaque type ConnectOptions {
 pub fn new(host: String, port: net.Port) -> ConnectOptions {
   let connect = Open(host:, port:)
 
-  ConnectOptions(connect:, verify: Verify(VerifyPeer), timeout: net.infinity)
+  ConnectOptions(
+    connect:,
+    verify: Verify(VerifyPeer),
+    cacerts: None,
+    timeout: net.infinity,
+  )
 }
 
 /// Creates connection options to upgrade an existing TCP socket to SSL/TLS.
@@ -124,7 +134,12 @@ pub fn new(host: String, port: net.Port) -> ConnectOptions {
 pub fn from_tcp(socket: Tcp, host: String) -> ConnectOptions {
   let connect = Upgrade(socket:, host:)
 
-  ConnectOptions(connect:, verify: Verify(VerifyPeer), timeout: net.infinity)
+  ConnectOptions(
+    connect:,
+    verify: Verify(VerifyPeer),
+    cacerts: None,
+    timeout: net.infinity,
+  )
 }
 
 /// Disables certificate verification.
@@ -142,6 +157,17 @@ pub fn verify_peer(opts: ConnectOptions) -> ConnectOptions {
   ConnectOptions(..opts, verify: Verify(VerifyPeer))
 }
 
+/// Sets the CA certificates to use for peer verification.
+///
+/// When set, these certificates are used instead of the system CA store.
+/// Only has an effect when `verify_peer` is enabled.
+pub fn connect_cacerts(
+  opts: ConnectOptions,
+  certs: List(BitArray),
+) -> ConnectOptions {
+  ConnectOptions(..opts, cacerts: Some(certs))
+}
+
 /// Sets the connection timeout.
 pub fn timeout(opts: ConnectOptions, timeout: net.Timeout) -> ConnectOptions {
   ConnectOptions(..opts, timeout:)
@@ -156,11 +182,11 @@ pub fn connect(opts: ConnectOptions) -> Result(Ssl, SslError) {
     Open(host:, port:) ->
       host
       |> charlist.from_string
-      |> ssl_connect_(port, opts.verify, opts.timeout)
+      |> ssl_connect_(port, opts.verify, opts.cacerts, opts.timeout)
     Upgrade(socket:, host:) -> {
       let host = charlist.from_string(host)
 
-      ssl_upgrade_(socket, host, opts.verify, opts.timeout)
+      ssl_upgrade_(socket, host, opts.verify, opts.cacerts, opts.timeout)
     }
   }
 }
@@ -265,7 +291,7 @@ pub fn handshake_options(cert: BitArray, key: PrivateKey) -> HandshakeOptions {
 }
 
 /// Sets the CA certificates for client certificate verification.
-pub fn cacerts(
+pub fn handshake_cacerts(
   opts: HandshakeOptions,
   certs: List(BitArray),
 ) -> HandshakeOptions {
@@ -318,6 +344,7 @@ fn ssl_upgrade_(
   socket: Tcp,
   host: Charlist,
   verify: Verify,
+  cacerts: Option(List(BitArray)),
   timeout: net.Timeout,
 ) -> Result(Ssl, SslError)
 
@@ -335,6 +362,7 @@ fn ssl_connect_(
   host: Charlist,
   port: net.Port,
   verify: Verify,
+  cacerts: Option(List(BitArray)),
   timeout: net.Timeout,
 ) -> Result(Ssl, SslError)
 

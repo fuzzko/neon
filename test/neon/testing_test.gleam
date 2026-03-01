@@ -5,14 +5,14 @@ import neon/net
 import neon/ssl
 import neon/testing
 
-const host = "127.0.0.1"
+const host = "localhost"
 
 // ---------- RSA ---------- //
 
 pub fn rsa_pkix_test_data_test() {
   let data =
     testing.rsa(2048)
-    |> testing.pkix_test_data
+    |> testing.pkix_test_data(host)
 
   // Server cert data is non-empty
   assert bit_array.byte_size(data.server.cert) > 0
@@ -34,7 +34,7 @@ pub fn ec_pkix_test_data_test() {
   let data =
     testing.Secp256r1
     |> testing.ec
-    |> testing.pkix_test_data
+    |> testing.pkix_test_data(host)
 
   assert bit_array.byte_size(data.server.cert) > 0
   assert list.is_empty(data.server.cacerts) == False
@@ -60,7 +60,7 @@ fn assert_handshake(data: testing.PkixTestData, payload: BitArray) {
 
   let hs_opts =
     ssl.handshake_options(data.server.cert, data.server.key)
-    |> ssl.cacerts(data.server.cacerts)
+    |> ssl.handshake_cacerts(data.server.cacerts)
 
   let test_subject = process.new_subject()
 
