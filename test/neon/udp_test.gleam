@@ -47,7 +47,7 @@ pub fn connect_closed_test() {
   udp.close(sock)
 
   let assert Ok(closed_port) = net.port(8000)
-  let assert Error(_) = udp.connect(sock, address, closed_port)
+  let assert Error(udp.Closed) = udp.connect(sock, address, closed_port)
 }
 
 pub fn send_test() {
@@ -75,7 +75,7 @@ pub fn send_closed_test() {
 
   udp.close(sock)
 
-  let assert Error(_) = udp.send(sock, <<"hello":utf8>>)
+  let assert Error(udp.Closed) = udp.send(sock, <<"hello":utf8>>)
 }
 
 // ---------- receive ---------- //
@@ -109,7 +109,8 @@ pub fn receive_negative_length_test() {
   let assert Ok(sock) = udp.new(port) |> udp.open
 
   let assert Ok(timeout) = net.timeout(1000)
-  let assert Error(udp.UdpError(_)) = udp.receive(sock, -1, timeout)
+  let assert Error(udp.UdpError("Length must be non-negative")) =
+    udp.receive(sock, -1, timeout)
 }
 
 pub fn receive_timeout_test() {
@@ -214,5 +215,5 @@ pub fn close_receive_test() {
 
   // Receiving on a closed socket should fail
   let assert Ok(timeout) = net.timeout(100)
-  let assert Error(_) = udp.receive(sock, 0, timeout)
+  let assert Error(udp.Closed) = udp.receive(sock, 0, timeout)
 }

@@ -275,7 +275,8 @@ pub fn receive_negative_length_test() {
   let #(ssl_socket, _server_ssl) = connected_pair()
 
   let assert Ok(timeout) = net.timeout(1000)
-  let assert Error(ssl.SslError(_)) = ssl.receive(ssl_socket, -1, timeout)
+  let assert Error(ssl.SslError("Length must be non-negative")) =
+    ssl.receive(ssl_socket, -1, timeout)
 }
 
 pub fn receive_closed_test() {

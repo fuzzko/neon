@@ -112,7 +112,7 @@ pub fn send_closed_test() {
   let #(socket, _listener) = connected_pair()
 
   let assert Ok(_) = tcp.shutdown(socket)
-  let assert Error(_posix) = tcp.send(socket, <<"hello":utf8>>)
+  let assert Error(tcp.Closed) = tcp.send(socket, <<"hello":utf8>>)
 }
 
 // ---------- receive ---------- //
@@ -192,7 +192,8 @@ pub fn receive_negative_length_test() {
   let #(socket, _listener) = connected_pair()
 
   let assert Ok(timeout) = net.timeout(1000)
-  let assert Error(tcp.TcpError(_)) = tcp.receive(socket, -1, timeout)
+  let assert Error(tcp.TcpError("Length must be non-negative")) =
+    tcp.receive(socket, -1, timeout)
 }
 
 // ---------- close ---------- //
@@ -222,7 +223,7 @@ pub fn shutdown_closed_test() {
   assert Nil == tcp.close(socket)
   assert Nil == tcp.close(listener)
 
-  let assert Error(_posix) = tcp.shutdown(socket)
+  let assert Error(tcp.Closed) = tcp.shutdown(socket)
 }
 
 // ---------- active ---------- //
