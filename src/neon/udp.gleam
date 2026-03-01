@@ -144,5 +144,5 @@ fn udp_receive_(
 @external(erlang, "udp_ffi", "close")
 fn udp_close_(socket: Udp) -> Nil
 
-@external(erlang, "inet_ffi", "inet_port")
+@external(erlang, "inet_ffi", "port")
 fn inet_port_(socket: Udp) -> Result(Int, Nil)
