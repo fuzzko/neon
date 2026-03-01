@@ -156,14 +156,14 @@ normalise({error, closed}) -> {error, closed};
 normalise({error, timeout}) -> {error, timeout};
 normalise({error, {tls_alert, {Alert, Description}}}) ->
   Desc = unicode:characters_to_binary(Description),
-  {error, {tls_alert, {Alert, Desc}}};
+  {error, {tls_alert, Alert, Desc}};
 normalise({error, ssl_not_started}) -> {error, ssl_not_started};
 normalise({error, Reason}) when is_atom(Reason) ->
   {error, {posix, Reason}};
 normalise({error, Reason}) ->
   Formatted = ssl:format_error(Reason),
   Description = unicode:characters_to_binary(Formatted),
-  {error, {error, Description}}.
+  {error, {ssl_error, Description}}.
 
 ip_address_and_version({ipv4_address, A, B, C, D}) ->
   {inet, {A, B, C, D}};
@@ -181,9 +181,9 @@ normalise_error(closed) -> closed;
 normalise_error(timeout) -> timeout;
 normalise_error({tls_alert, {Alert, Description}}) ->
   Desc = unicode:characters_to_binary(Description),
-  {tls_alert, {Alert, Desc}};
+  {tls_alert, Alert, Desc};
 normalise_error(Posix) when is_atom(Posix) -> {posix, Posix};
 normalise_error(Reason) ->
   Formatted = ssl:format_error(Reason),
   Description = unicode:characters_to_binary(Formatted),
-  {error, Description}.
+  {ssl_error, Description}.

@@ -131,6 +131,39 @@ pub fn connect_error_test() {
     |> ssl.connect
 }
 
+pub fn connect_tls_alert_unknown_ca_test() {
+  let server_data = testing.pkix_test_data(testing.rsa(2048), host)
+  let wrong_ca_data = testing.pkix_test_data(testing.rsa(2048), host)
+
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
+  let assert Ok(port) = net.port(0)
+
+  let assert Ok(listener) = ssl.listen(port, loopback)
+  let assert Ok(port_num) = ssl.port(listener)
+
+  let hs_opts =
+    ssl.handshake_options(server_data.server.cert, server_data.server.key)
+    |> ssl.handshake_cacerts(server_data.server.cacerts)
+
+  let _pid =
+    process.spawn(fn() {
+      let assert Ok(timeout) = net.timeout(5000)
+      let assert Ok(transport) = ssl.accept(listener, timeout)
+      suppress_logger_()
+
+      let _result = ssl.handshake(transport, hs_opts)
+
+      default_logger_()
+    })
+
+  // The client trusts the wrong CA and should get UnknownCa alert
+  let assert Error(ssl.TlsAlert(ssl.UnknownCa, _description)) =
+    ssl.new(host, port_num)
+    |> ssl.verify_peer
+    |> ssl.connect_cacerts(wrong_ca_data.client.cacerts)
+    |> ssl.connect
+}
+
 pub fn upgrade_error_test() {
   let assert Ok(port) = net.port(0)
 
@@ -531,11 +564,11 @@ pub fn handshake_tcp_send_receive_test() {
 // ---------- ssl_not_started ---------- //
 
 pub fn connect_ssl_not_started_test() {
-  log_error_()
+  suppress_logger_()
 
   ssl.stop()
 
-  log_default_()
+  default_logger_()
 
   let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
   let assert Ok(port) = net.port(0)
@@ -587,8 +620,8 @@ fn connected_pair() -> #(Ssl, Ssl) {
   #(client_ssl, server_ssl)
 }
 
-@external(erlang, "neon_test_ffi", "log_error")
-fn log_error_() -> Nil
+@external(erlang, "neon_test_ffi", "suppress_logger")
+fn suppress_logger_() -> Nil
 
-@external(erlang, "neon_test_ffi", "log_default")
-fn log_default_() -> Nil
+@external(erlang, "neon_test_ffi", "default_logger")
+fn default_logger_() -> Nil

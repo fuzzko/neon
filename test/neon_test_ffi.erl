@@ -1,11 +1,11 @@
 -module(neon_test_ffi).
 
--export([log_error/0, log_default/0]).
+-export([suppress_logger/0, default_logger/0]).
 
-log_error() ->
-  logger:set_primary_config(level, error),
+suppress_logger() ->
+  logger:set_primary_config(level, emergency),
   nil.
 
-log_default() ->
+default_logger() ->
   logger:set_primary_config(level, notice),
   nil.
