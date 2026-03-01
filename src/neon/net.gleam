@@ -338,8 +338,8 @@ pub fn posix_to_string(code: Posix) -> String {
   }
 }
 
-@external(erlang, "neon_ffi", "inet_parse_address")
+@external(erlang, "inet_ffi", "inet_parse_address")
 fn inet_parse_address(address: Charlist) -> Result(IpAddress, Posix)
 
-@external(erlang, "neon_ffi", "inet_ntoa")
+@external(erlang, "inet_ffi", "inet_ntoa")
 fn inet_ntoa(address: IpAddress) -> String

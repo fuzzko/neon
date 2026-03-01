@@ -149,5 +149,5 @@ fn tcp_accept_(listener: Tcp, timeout: net.Timeout) -> Result(Tcp, TcpError)
 @external(erlang, "neon_ffi", "tcp_close")
 fn tcp_close_(socket: Tcp) -> Nil
 
-@external(erlang, "neon_ffi", "inet_port")
+@external(erlang, "inet_ffi", "inet_port")
 fn inet_port_(socket: Tcp) -> Result(Int, Nil)
