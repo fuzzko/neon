@@ -3,6 +3,8 @@
 [![Package Version](https://img.shields.io/hexpm/v/neon)](https://hex.pm/packages/neon)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/neon/)
 
+A networking library for Gleam on the Erlang target. Provides TCP, UDP, and SSL/TLS sockets with a builder-style API, support for both active and passive modes, IPv4 and IPv6, and START-TLS upgrades. Built on Erlang's `gen_tcp`, `gen_udp`, and `ssl` modules.
+
 ```sh
 gleam add neon@1
 ```
