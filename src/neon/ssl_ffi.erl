@@ -31,7 +31,7 @@ upgrade(TCPSocket, Host, Verify, Timeout) ->
   Resp = ssl:connect(TCPSocket, TLSOpts, T),
   normalise(Resp).
 
-connect(Host, Port, Verify, Timeout) ->
+connect(Host, {port, Port}, Verify, Timeout) ->
   T = case Timeout of
     infinity -> infinity;
     {timeout, Int} -> Int
@@ -82,7 +82,7 @@ send(SslSocket, Packet) ->
   Sent = ssl:send(SslSocket, Packet),
   normalise(Sent).
 
-listen(Port, IpAddress) ->
+listen({port, Port}, IpAddress) ->
   {Inet, Address} = ip_address_and_version(IpAddress),
 
   Options = [

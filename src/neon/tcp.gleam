@@ -59,7 +59,7 @@ pub fn timeout(opts: ConnectOptions, timeout: net.Timeout) -> ConnectOptions {
 /// Establishes a TCP connection using the given options.
 pub fn connect(opts: ConnectOptions) -> Result(Tcp, TcpError) {
   opts.address
-  |> tcp_connect_(net.port_to_int(opts.port), opts.ip_version, opts.timeout)
+  |> tcp_connect_(opts.port, opts.ip_version, opts.timeout)
 }
 
 /// Sends data over a TCP socket.
@@ -92,9 +92,7 @@ pub fn listen(
   port: net.Port,
   ip_address: net.IpAddress,
 ) -> Result(Tcp, TcpError) {
-  port
-  |> net.port_to_int
-  |> tcp_listen_(ip_address)
+  tcp_listen_(port, ip_address)
 }
 
 /// Accepts an incoming connection on a listening socket.
@@ -122,7 +120,7 @@ pub fn port(socket: Tcp) -> Result(net.Port, Nil) {
 @external(erlang, "tcp_ffi", "connect")
 fn tcp_connect_(
   address: net.Address,
-  port: Int,
+  port: net.Port,
   ip_version: net.IpVersion,
   timeout: net.Timeout,
 ) -> Result(Tcp, TcpError)
@@ -141,7 +139,10 @@ fn tcp_send_(socket: Tcp, packet: BitArray) -> Result(Nil, TcpError)
 fn tcp_shutdown_(socket: Tcp) -> Result(Nil, TcpError)
 
 @external(erlang, "tcp_ffi", "listen")
-fn tcp_listen_(port: Int, ip_address: net.IpAddress) -> Result(Tcp, TcpError)
+fn tcp_listen_(
+  port: net.Port,
+  ip_address: net.IpAddress,
+) -> Result(Tcp, TcpError)
 
 @external(erlang, "tcp_ffi", "accept")
 fn tcp_accept_(listener: Tcp, timeout: net.Timeout) -> Result(Tcp, TcpError)

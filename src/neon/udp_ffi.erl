@@ -8,7 +8,7 @@
   close/1
 ]).
 
-open(Port, MaybeIpAddress, IpVersion) ->
+open({port, Port}, MaybeIpAddress, IpVersion) ->
   case MaybeIpAddress of
     none ->
       Inet = ip_version_to_inet(IpVersion),
@@ -20,7 +20,7 @@ open(Port, MaybeIpAddress, IpVersion) ->
       normalise(gen_udp:open(Port, Opts))
   end.
 
-connect(UdpSocket, Address, Port) ->
+connect(UdpSocket, Address, {port, Port}) ->
   Addr = case Address of
     {hostname, Hostname} -> unicode:characters_to_list(Hostname);
     {ip_address, {ipv4_address, A, B, C, D}} -> {A, B, C, D};

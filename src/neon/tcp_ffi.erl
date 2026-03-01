@@ -10,7 +10,7 @@
   shutdown/1
 ]).
 
-connect(Address, Port, IpVersion, Timeout) ->
+connect(Address, {port, Port}, IpVersion, Timeout) ->
   Inet = ip_version_to_inet(IpVersion),
 
   Addr = case Address of
@@ -53,7 +53,7 @@ send(TcpSocket, Packet) ->
   Sent = gen_tcp:send(TcpSocket, Packet),
   normalise(Sent).
 
-listen(Port, IpAddress) ->
+listen({port, Port}, IpAddress) ->
   {Inet, Address} = ip_address_and_version(IpAddress),
 
   Options = [

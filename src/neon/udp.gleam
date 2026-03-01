@@ -56,7 +56,7 @@ pub fn ip_version(opts: OpenOptions, ip_version: net.IpVersion) -> OpenOptions {
 
 /// Opens a UDP socket with the given options.
 pub fn open(opts: OpenOptions) -> Result(Udp, UdpError) {
-  udp_open_(net.port_to_int(opts.port), opts.ip_address, opts.ip_version)
+  udp_open_(opts.port, opts.ip_address, opts.ip_version)
 }
 
 /// Associates a UDP socket with a remote address and port.
@@ -67,7 +67,7 @@ pub fn connect(
   address: net.Address,
   port: net.Port,
 ) -> Result(Nil, UdpError) {
-  udp_connect_(socket, address, net.port_to_int(port))
+  udp_connect_(socket, address, port)
 }
 
 /// Sends data over a connected UDP socket.
@@ -119,7 +119,7 @@ pub fn port(socket: Udp) -> Result(net.Port, Nil) {
 
 @external(erlang, "udp_ffi", "open")
 fn udp_open_(
-  port: Int,
+  port: net.Port,
   ip_address: Option(net.IpAddress),
   ip_version: net.IpVersion,
 ) -> Result(Udp, UdpError)
@@ -128,7 +128,7 @@ fn udp_open_(
 fn udp_connect_(
   socket: Udp,
   address: net.Address,
-  port: Int,
+  port: net.Port,
 ) -> Result(Nil, UdpError)
 
 @external(erlang, "udp_ffi", "send")

@@ -141,7 +141,7 @@ pub fn connect(opts: ConnectOptions) -> Result(Ssl, SslError) {
     Open(host:, port:) ->
       host
       |> charlist.from_string
-      |> ssl_connect_(net.port_to_int(port), opts.verify, opts.timeout)
+      |> ssl_connect_(port, opts.verify, opts.timeout)
     Upgrade(socket:, host:) -> {
       let host = charlist.from_string(host)
 
@@ -234,7 +234,7 @@ pub fn listen(
   port: net.Port,
   ip_address: net.IpAddress,
 ) -> Result(Ssl, SslError) {
-  ssl_listen_(net.port_to_int(port), ip_address)
+  ssl_listen_(port, ip_address)
 }
 
 /// Accepts an incoming connection on an SSL listen socket.
@@ -273,7 +273,7 @@ fn ssl_upgrade_(
 @external(erlang, "ssl_ffi", "connect")
 fn ssl_connect_(
   host: Charlist,
-  port: Int,
+  port: net.Port,
   verify: Verify,
   timeout: net.Timeout,
 ) -> Result(Ssl, SslError)
@@ -298,7 +298,10 @@ fn ssl_close_(socket: Ssl) -> Result(Nil, SslError)
 fn ssl_port_(socket: Ssl) -> Result(net.Port, SslError)
 
 @external(erlang, "ssl_ffi", "listen")
-fn ssl_listen_(port: Int, ip_address: net.IpAddress) -> Result(Ssl, SslError)
+fn ssl_listen_(
+  port: net.Port,
+  ip_address: net.IpAddress,
+) -> Result(Ssl, SslError)
 
 @external(erlang, "ssl_ffi", "transport_accept")
 fn ssl_transport_accept_(
