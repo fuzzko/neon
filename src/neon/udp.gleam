@@ -117,31 +117,31 @@ pub fn port(socket: Udp) -> Result(net.Port, Nil) {
   |> result.try(net.port)
 }
 
-@external(erlang, "neon_ffi", "udp_open")
+@external(erlang, "udp_ffi", "udp_open")
 fn udp_open_(
   port: Int,
   ip_address: Option(net.IpAddress),
   ip_version: net.IpVersion,
 ) -> Result(Udp, UdpError)
 
-@external(erlang, "neon_ffi", "udp_connect")
+@external(erlang, "udp_ffi", "udp_connect")
 fn udp_connect_(
   socket: Udp,
   address: net.Address,
   port: Int,
 ) -> Result(Nil, UdpError)
 
-@external(erlang, "neon_ffi", "udp_send")
+@external(erlang, "udp_ffi", "udp_send")
 fn udp_send_(socket: Udp, payload: BitArray) -> Result(Nil, UdpError)
 
-@external(erlang, "neon_ffi", "udp_receive")
+@external(erlang, "udp_ffi", "udp_receive")
 fn udp_receive_(
   socket: Udp,
   length: Int,
   timeout: net.Timeout,
 ) -> Result(#(net.IpAddress, net.Port, BitArray), UdpError)
 
-@external(erlang, "neon_ffi", "udp_close")
+@external(erlang, "udp_ffi", "udp_close")
 fn udp_close_(socket: Udp) -> Nil
 
 @external(erlang, "inet_ffi", "inet_port")
