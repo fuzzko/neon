@@ -74,6 +74,8 @@ pub type SslError {
   TlsAlert(TlsAlert, String)
   /// A generic SSL error with a description.
   SslError(String)
+  /// The SSL application has not been started. Call `start` first.
+  SslNotStarted
 }
 
 /// Messages received from an SSL socket in active mode.
@@ -265,6 +267,13 @@ pub fn close(socket: Ssl) -> Result(Nil, SslError) {
 /// idempotent and can safely be called multiple times.
 @external(erlang, "ssl_ffi", "start")
 pub fn start() -> Result(Nil, SslError)
+
+/// Stops the SSL application.
+///
+/// After calling this, SSL/TLS operations will fail with `SslNotStarted`
+/// until `start` is called again.
+@external(erlang, "ssl_ffi", "stop")
+pub fn stop() -> Nil
 
 /// Returns the port number assigned to an SSL socket by the operating system.
 pub fn port(socket: Ssl) -> Result(net.Port, SslError) {

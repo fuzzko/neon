@@ -2,6 +2,7 @@
 
 -export([
   start/0,
+  stop/0,
   port/1,
   connect/5,
   upgrade/5,
@@ -20,6 +21,10 @@
 start() ->
   Resp = ssl:start(),
   normalise(Resp).
+
+stop() ->
+  ssl:stop(),
+  nil.
 
 port(SslSocket) ->
   Resp = ssl:sockname(SslSocket),
@@ -152,6 +157,7 @@ normalise({error, timeout}) -> {error, timeout};
 normalise({error, {tls_alert, {Alert, Description}}}) ->
   Desc = unicode:characters_to_binary(Description),
   {error, {tls_alert, {Alert, Desc}}};
+normalise({error, ssl_not_started}) -> {error, ssl_not_started};
 normalise({error, Reason}) when is_atom(Reason) ->
   {error, {posix, Reason}};
 normalise({error, Reason}) ->

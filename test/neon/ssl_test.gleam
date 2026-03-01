@@ -528,6 +528,30 @@ pub fn handshake_tcp_send_receive_test() {
   let assert Ok(_) = process.receive(test_subject, 5000)
 }
 
+// ---------- ssl_not_started ---------- //
+
+pub fn connect_ssl_not_started_test() {
+  log_error_()
+
+  ssl.stop()
+
+  log_default_()
+
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
+  let assert Ok(port) = net.port(0)
+  let assert Ok(tcp_listener) = tcp.listen(port, loopback)
+  let assert Ok(port_num) = tcp.port(tcp_listener)
+
+  let assert Error(ssl.SslNotStarted) =
+    ssl.new(host, port_num)
+    |> ssl.verify_none
+    |> ssl.connect
+
+  tcp.close(tcp_listener)
+
+  let assert Ok(Nil) = ssl.start()
+}
+
 fn connected_pair() -> #(Ssl, Ssl) {
   let data = testing.pkix_test_data(testing.rsa(2048), host)
 
@@ -562,3 +586,9 @@ fn connected_pair() -> #(Ssl, Ssl) {
 
   #(client_ssl, server_ssl)
 }
+
+@external(erlang, "neon_test_ffi", "log_error")
+fn log_error_() -> Nil
+
+@external(erlang, "neon_test_ffi", "log_default")
+fn log_default_() -> Nil
