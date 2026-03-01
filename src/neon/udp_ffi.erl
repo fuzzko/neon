@@ -34,7 +34,10 @@ udp_send(UdpSocket, Packet) ->
   normalise_udp(Resp).
 
 udp_receive(UdpSocket, Length, Timeout) ->
-  T = normalise_timeout(Timeout),
+  T = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
   Resp = gen_udp:recv(UdpSocket, Length, T),
   normalise_udp(Resp).
 
@@ -57,9 +60,6 @@ normalise_ip_address({A, B, C, D}) ->
   {ipv4_address, A, B, C, D};
 normalise_ip_address({A, B, C, D, E, F, G, H}) ->
   {ipv6_address, A, B, C, D, E, F, G, H}.
-
-normalise_timeout(infinity) -> infinity;
-normalise_timeout({timeout, Int}) -> Int.
 
 ip_address_and_version({ipv4_address, A, B, C, D}) ->
   {inet, {A, B, C, D}};

@@ -23,13 +23,19 @@ ssl_port(SslSocket) ->
   normalise_ssl(Resp).
 
 ssl_upgrade(TCPSocket, Host, Verify, Timeout) ->
-  T = normalise_timeout(Timeout),
+  T = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
   TLSOpts = ssl_connect_opts(Host, Verify),
   Resp = ssl:connect(TCPSocket, TLSOpts, T),
   normalise_ssl(Resp).
 
 ssl_connect(Host, Port, Verify, Timeout) ->
-  T = normalise_timeout(Timeout),
+  T = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
   TLSOpts = ssl_connect_opts(Host, Verify),
   Resp = ssl:connect(Host, Port, TLSOpts, T),
   normalise_ssl(Resp).
@@ -65,7 +71,10 @@ ssl_close(SslSocket) ->
   normalise_ssl(Resp).
 
 ssl_recv(SslSocket, Size, Timeout) ->
-  T = normalise_timeout(Timeout),
+  T = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
   Resp = ssl:recv(SslSocket, Size, T),
   normalise_ssl(Resp).
 
@@ -88,12 +97,18 @@ ssl_listen(Port, IpAddress) ->
   normalise_ssl(Resp).
 
 ssl_transport_accept(ListenSocket, Timeout) ->
-  T = normalise_timeout(Timeout),
+  T = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
   Resp = ssl:transport_accept(ListenSocket, T),
   normalise_ssl(Resp).
 
 ssl_handshake(Socket, Cert, Key, MaybeCaCerts, Timeout) ->
-  T = normalise_timeout(Timeout),
+  T = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
   ErlKey = private_key_to_erl(Key),
 
   BaseOpts = [
@@ -133,6 +148,3 @@ ip_address_and_version({ipv4_address, A, B, C, D}) ->
   {inet, {A, B, C, D}};
 ip_address_and_version({ipv6_address, A, B, C, D, E, F, G, H}) ->
   {inet6, {A, B, C, D, E, F, G, H}}.
-
-normalise_timeout(infinity) -> infinity;
-normalise_timeout({timeout, Int}) -> Int.

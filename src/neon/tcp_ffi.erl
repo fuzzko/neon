@@ -19,7 +19,10 @@ tcp_connect(Address, Port, IpVersion, Timeout) ->
     {ip_address, {ipv6_address, A, B, C, D, E, F, G, H}} -> {A, B, C, D, E, F, G, H}
   end,
 
-  T = normalise_timeout(Timeout),
+  T = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
 
   Opts = [
     binary,
@@ -39,7 +42,10 @@ tcp_shutdown(TcpSocket) ->
   normalise_tcp(Shut).
 
 tcp_recv(TcpSocket, Size, Timeout) ->
-  T = normalise_timeout(Timeout),
+  T = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
   Resp = gen_tcp:recv(TcpSocket, Size, T),
   normalise_tcp(Resp).
 
@@ -67,7 +73,10 @@ ip_address_and_version({ipv6_address, A, B, C, D, E, F, G, H}) ->
   {inet6, {A, B, C, D, E, F, G, H}}.
 
 tcp_accept(TcpSocket, Timeout) ->
-  T = normalise_timeout(Timeout),
+  T = case Timeout of
+    infinity -> infinity;
+    {timeout, Int} -> Int
+  end,
   Resp = gen_tcp:accept(TcpSocket, T),
   normalise_tcp(Resp).
 
@@ -82,6 +91,3 @@ normalise_tcp({error, timeout} = E) -> E;
 normalise_tcp({error, system_limit} = E) -> E;
 normalise_tcp({error, {timeout, _}}) -> {error, timeout};
 normalise_tcp({error, Posix}) -> {error, {posix, Posix}}.
-
-normalise_timeout(infinity) -> infinity;
-normalise_timeout({timeout, Int}) -> Int.
