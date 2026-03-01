@@ -3,6 +3,7 @@ version = "1.0.0"
 description = "A Gleam networking library for TCP, UDP, and SSL/TLS sockets"
 licences = ["MIT"]
 repository = { type = "github", user = "stndrs", repo = "neon" }
+target = "erlang"
 
 [dependencies]
 gleam_stdlib = ">= 0.44.0 and < 2.0.0"
