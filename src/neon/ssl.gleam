@@ -184,7 +184,7 @@ pub fn close(socket: Ssl) -> Result(Nil, SslError) {
 ///
 /// Must be called before any SSL/TLS operations. This function is
 /// idempotent and can safely be called multiple times.
-@external(erlang, "neon_ffi", "ssl_start")
+@external(erlang, "ssl_ffi", "ssl_start")
 pub fn start() -> Result(Nil, SslError)
 
 /// Returns the port number assigned to an SSL socket by the operating system.
@@ -262,7 +262,7 @@ pub fn handshake_from_tcp(
   ssl_handshake_tcp_(socket, opts.cert, opts.key, opts.cacerts, opts.timeout)
 }
 
-@external(erlang, "neon_ffi", "ssl_upgrade")
+@external(erlang, "ssl_ffi", "ssl_upgrade")
 fn ssl_upgrade_(
   socket: Tcp,
   host: Charlist,
@@ -270,7 +270,7 @@ fn ssl_upgrade_(
   timeout: net.Timeout,
 ) -> Result(Ssl, SslError)
 
-@external(erlang, "neon_ffi", "ssl_connect")
+@external(erlang, "ssl_ffi", "ssl_connect")
 fn ssl_connect_(
   host: Charlist,
   port: Int,
@@ -278,35 +278,35 @@ fn ssl_connect_(
   timeout: net.Timeout,
 ) -> Result(Ssl, SslError)
 
-@external(erlang, "neon_ffi", "ssl_send")
+@external(erlang, "ssl_ffi", "ssl_send")
 fn ssl_send_(socket: Ssl, payload: BitArray) -> Result(Nil, SslError)
 
-@external(erlang, "neon_ffi", "ssl_recv")
+@external(erlang, "ssl_ffi", "ssl_recv")
 fn ssl_receive_(
   socket: Ssl,
   length: Int,
   timeout: net.Timeout,
 ) -> Result(BitArray, SslError)
 
-@external(erlang, "neon_ffi", "ssl_shutdown")
+@external(erlang, "ssl_ffi", "ssl_shutdown")
 fn ssl_shutdown_(socket: Ssl) -> Result(Nil, SslError)
 
-@external(erlang, "neon_ffi", "ssl_close")
+@external(erlang, "ssl_ffi", "ssl_close")
 fn ssl_close_(socket: Ssl) -> Result(Nil, SslError)
 
-@external(erlang, "neon_ffi", "ssl_port")
+@external(erlang, "ssl_ffi", "ssl_port")
 fn ssl_port_(socket: Ssl) -> Result(net.Port, SslError)
 
-@external(erlang, "neon_ffi", "ssl_listen")
+@external(erlang, "ssl_ffi", "ssl_listen")
 fn ssl_listen_(port: Int, ip_address: net.IpAddress) -> Result(Ssl, SslError)
 
-@external(erlang, "neon_ffi", "ssl_transport_accept")
+@external(erlang, "ssl_ffi", "ssl_transport_accept")
 fn ssl_transport_accept_(
   socket: Ssl,
   timeout: net.Timeout,
 ) -> Result(Ssl, SslError)
 
-@external(erlang, "neon_ffi", "ssl_handshake")
+@external(erlang, "ssl_ffi", "ssl_handshake")
 fn ssl_handshake_(
   socket: Ssl,
   cert: BitArray,
@@ -315,7 +315,7 @@ fn ssl_handshake_(
   timeout: net.Timeout,
 ) -> Result(Ssl, SslError)
 
-@external(erlang, "neon_ffi", "ssl_handshake")
+@external(erlang, "ssl_ffi", "ssl_handshake")
 fn ssl_handshake_tcp_(
   socket: Tcp,
   cert: BitArray,
