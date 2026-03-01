@@ -27,7 +27,7 @@ pub fn ec_private_key(key: BitArray) -> PrivateKey {
   EcPrivateKey(key)
 }
 
-/// TLS alert descriptions as defined the [erlang ssl module documentation][1].
+/// TLS alert descriptions as defined in the [Erlang ssl module documentation][1].
 ///
 /// [1]: https://www.erlang.org/doc/apps/ssl/ssl.html#t:tls_alert/0
 pub type TlsAlert {

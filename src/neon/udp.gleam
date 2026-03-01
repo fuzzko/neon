@@ -11,7 +11,7 @@ pub type UdpError {
   Closed
   /// The operation timed out.
   Timeout
-  /// The erlang VM can't allocate more resources for network operations.
+  /// The Erlang VM can't allocate more resources for network operations.
   SystemLimit
   /// A POSIX error.
   Posix(net.Posix)

@@ -169,7 +169,7 @@ pub fn timeout(num: Int) -> Result(Timeout, Nil) {
 /// An infinite timeout.
 pub const infinity = Infinity
 
-/// POSIX error codes returned by the operating system.
+/// POSIX error codes.
 ///
 /// See the [Erlang inet documentation](https://www.erlang.org/doc/apps/kernel/inet.html#module-posix-error-codes)
 /// for descriptions of each error code.

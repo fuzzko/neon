@@ -45,7 +45,6 @@ pub fn main() {
   let assert Ok(port) = net.port(443)
   let assert Ok(socket) =
     ssl.new("gleam.run", port)
-    |> ssl.verify_peer
     |> ssl.connect
 
   let assert Ok(Nil) =
