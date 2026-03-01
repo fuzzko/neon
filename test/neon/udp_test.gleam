@@ -104,6 +104,14 @@ pub fn receive_test() {
   assert recv_ip == loopback
 }
 
+pub fn receive_negative_length_test() {
+  let assert Ok(port) = net.port(0)
+  let assert Ok(sock) = udp.new(port) |> udp.open
+
+  let assert Ok(timeout) = net.timeout(1000)
+  let assert Error(udp.UdpError(_)) = udp.receive(sock, -1, timeout)
+}
+
 pub fn receive_timeout_test() {
   let assert Ok(port) = net.port(0)
   let assert Ok(sock) = udp.new(port) |> udp.open

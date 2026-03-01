@@ -8,6 +8,7 @@ pub type TcpError {
   Timeout
   SystemLimit
   Posix(net.Posix)
+  TcpError(String)
 }
 
 pub opaque type ConnectOptions {
@@ -48,7 +49,10 @@ pub fn receive(
   length: Int,
   timeout: net.Timeout,
 ) -> Result(BitArray, TcpError) {
-  tcp_receive_(socket, length, timeout)
+  case length >= 0 {
+    True -> tcp_receive_(socket, length, timeout)
+    False -> Error(TcpError("Length must be non-negative"))
+  }
 }
 
 pub fn shutdown(socket: Tcp) -> Result(Nil, TcpError) {

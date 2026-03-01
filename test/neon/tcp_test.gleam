@@ -174,6 +174,13 @@ pub fn receive_forever_closed_test() {
   let assert Error(tcp.Closed) = tcp.receive(socket, 1, net.infinity)
 }
 
+pub fn receive_negative_length_test() {
+  let #(socket, _listener) = connected_pair()
+
+  let assert Ok(timeout) = net.timeout(1000)
+  let assert Error(tcp.TcpError(_)) = tcp.receive(socket, -1, timeout)
+}
+
 // ---------- close ---------- //
 
 pub fn close_test() {

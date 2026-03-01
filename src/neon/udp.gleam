@@ -9,6 +9,7 @@ pub type UdpError {
   Timeout
   SystemLimit
   Posix(net.Posix)
+  UdpError(String)
 }
 
 pub opaque type OpenOptions {
@@ -56,12 +57,16 @@ pub fn receive(
   length: Int,
   timeout: net.Timeout,
 ) -> Result(ReceiveData, UdpError) {
-  udp_receive_(socket, length, timeout)
-  |> result.map(fn(recv_data) {
-    let #(ip_address, port, payload) = recv_data
+  case length >= 0 {
+    True ->
+      udp_receive_(socket, length, timeout)
+      |> result.map(fn(recv_data) {
+        let #(ip_address, port, payload) = recv_data
 
-    ReceiveData(ip_address:, port:, payload:)
-  })
+        ReceiveData(ip_address:, port:, payload:)
+      })
+    False -> Error(UdpError("Length must be non-negative"))
+  }
 }
 
 pub fn close(socket: Udp) -> Nil {
