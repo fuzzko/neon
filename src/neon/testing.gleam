@@ -37,5 +37,5 @@ pub fn ec(curve: EcCurve) -> KeyType {
 ///
 /// Both server and client certificate chains are generated with the
 /// same key type, no intermediate CAs, and a direct root-to-peer chain.
-@external(erlang, "neon_ffi", "pkix_test_data")
+@external(erlang, "public_key_ffi", "pkix_test_data")
 pub fn pkix_test_data(key_type: KeyType) -> PkixTestData

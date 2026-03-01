@@ -1,10 +1,8 @@
--module(neon_ffi).
+-module(public_key_ffi).
 
 -export([
   pkix_test_data/1
 ]).
-
-%%% testing %%%
 
 pkix_test_data(KeyType) ->
   KeyOpt = key_type_to_otp(KeyType),
