@@ -7,16 +7,16 @@
 gleam add neon@1
 ```
 ```gleam
-import gleam/io
 import neon/net
 import neon/tcp
 
 pub fn main() {
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
   let assert Ok(port) = net.port(0)
-  let assert Ok(listener) = tcp.listen(port, net.Ipv4Address(127, 0, 0, 1))
+  let assert Ok(listener) = tcp.listen(port, loopback)
   let assert Ok(port) = tcp.port(listener)
 
-  let address = net.ip_address(net.Ipv4Address(127, 0, 0, 1))
+  let address = net.ip_address(loopback)
   let assert Ok(socket) =
     tcp.new(address, port)
     |> tcp.connect
