@@ -128,7 +128,7 @@ pub fn port(socket: Ssl) -> Result(net.Port, SslError) {
   ssl_port_(socket)
 }
 
-@external(erlang, "neon_ffi", "ssl_connect")
+@external(erlang, "neon_ffi", "ssl_upgrade")
 fn ssl_upgrade_(
   socket: Tcp,
   host: Charlist,

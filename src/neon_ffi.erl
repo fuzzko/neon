@@ -14,6 +14,7 @@
   ssl_start/0,
   ssl_port/1,
   ssl_connect/4,
+  ssl_upgrade/4,
   ssl_send/2,
   ssl_recv/3,
   ssl_shutdown/1,
@@ -140,22 +141,20 @@ ssl_port(SslSocket) ->
   Resp = ssl:sockname(SslSocket),
   normalise_ssl(Resp).
 
-ssl_connect(TCPSocketOrHost, HostOrPort, Verify, Timeout) ->
-  T = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
-  do_ssl_connect(TCPSocketOrHost, HostOrPort, Verify, T).
-
-do_ssl_connect(TCPSocket, Host, Verify, Timeout) when is_list(Host) ->
+ssl_upgrade(TCPSocket, Host, Verify, Timeout) ->
+  T = ssl_connect_timeout(Timeout),
   TLSOpts = ssl_connect_opts(Host, Verify),
-  Resp = ssl:connect(TCPSocket, TLSOpts, Timeout),
-  normalise_ssl(Resp);
-
-do_ssl_connect(Host, Port, Verify, Timeout) when is_list(Host), is_integer(Port) ->
-  TLSOpts = ssl_connect_opts(Host, Verify),
-  Resp = ssl:connect(Host, Port, TLSOpts, Timeout),
+  Resp = ssl:connect(TCPSocket, TLSOpts, T),
   normalise_ssl(Resp).
+
+ssl_connect(Host, Port, Verify, Timeout) ->
+  T = ssl_connect_timeout(Timeout),
+  TLSOpts = ssl_connect_opts(Host, Verify),
+  Resp = ssl:connect(Host, Port, TLSOpts, T),
+  normalise_ssl(Resp).
+
+ssl_connect_timeout(infinity) -> infinity;
+ssl_connect_timeout({timeout, Int}) -> Int.
 
 ssl_connect_opts(_Host, {verify, verify_none}) ->
   [binary, {packet, raw}, {active, false}, {verify, verify_none}];
