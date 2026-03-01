@@ -1,3 +1,4 @@
+import gleam/option.{type Option, None, Some}
 import gleam/result
 import neon/net
 
@@ -10,10 +11,28 @@ pub type UdpError {
   Posix(net.Posix)
 }
 
-pub fn open(port: net.Port) -> Result(Udp, UdpError) {
-  port
-  |> net.port_to_int
-  |> udp_open_
+pub opaque type OpenOptions {
+  OpenOptions(
+    port: net.Port,
+    ip_address: Option(net.IpAddress),
+    ip_version: net.IpVersion,
+  )
+}
+
+pub fn new(port: net.Port) -> OpenOptions {
+  OpenOptions(port:, ip_address: None, ip_version: net.Ipv4)
+}
+
+pub fn ip_address(opts: OpenOptions, ip_address: net.IpAddress) -> OpenOptions {
+  OpenOptions(..opts, ip_address: Some(ip_address))
+}
+
+pub fn ip_version(opts: OpenOptions, ip_version: net.IpVersion) -> OpenOptions {
+  OpenOptions(..opts, ip_version:)
+}
+
+pub fn open(opts: OpenOptions) -> Result(Udp, UdpError) {
+  udp_open_(net.port_to_int(opts.port), opts.ip_address, opts.ip_version)
 }
 
 pub fn connect(
@@ -55,7 +74,11 @@ pub fn port(socket: Udp) -> Result(net.Port, Nil) {
 }
 
 @external(erlang, "neon_ffi", "udp_open")
-fn udp_open_(port: Int) -> Result(Udp, UdpError)
+fn udp_open_(
+  port: Int,
+  ip_address: Option(net.IpAddress),
+  ip_version: net.IpVersion,
+) -> Result(Udp, UdpError)
 
 @external(erlang, "neon_ffi", "udp_connect")
 fn udp_connect_(

@@ -9,18 +9,18 @@ const host = "127.0.0.1"
 
 pub fn open_test() {
   let assert Ok(port) = net.port(0)
-  let assert Ok(_sock) = udp.open(port)
+  let assert Ok(_sock) = udp.new(port) |> udp.open
 }
 
 pub fn open_error_test() {
   let assert Ok(port) = net.port(1)
   // Port 1 is privileged so opening should fail
-  let assert Error(udp.Posix(net.Eacces)) = udp.open(port)
+  let assert Error(udp.Posix(net.Eacces)) = udp.new(port) |> udp.open
 }
 
 pub fn port_test() {
   let assert Ok(port) = net.port(0)
-  let assert Ok(sock) = udp.open(port)
+  let assert Ok(sock) = udp.new(port) |> udp.open
   let assert Ok(port) = udp.port(sock)
 
   assert net.port_to_int(port) > 0
@@ -28,7 +28,7 @@ pub fn port_test() {
 
 pub fn connect_test() {
   let assert Ok(port) = net.port(0)
-  let assert Ok(sock) = udp.open(port)
+  let assert Ok(sock) = udp.new(port) |> udp.open
   let assert Ok(port_num) = udp.port(sock)
   let assert Ok(address) =
     net.parse_ip_address(host)
@@ -39,7 +39,7 @@ pub fn connect_test() {
 
 pub fn connect_closed_test() {
   let assert Ok(port) = net.port(0)
-  let assert Ok(sock) = udp.open(port)
+  let assert Ok(sock) = udp.new(port) |> udp.open
   let assert Ok(address) =
     net.parse_ip_address(host)
     |> result.map(net.ip_address)
@@ -52,7 +52,7 @@ pub fn connect_closed_test() {
 
 pub fn send_test() {
   let assert Ok(port) = net.port(0)
-  let assert Ok(sock) = udp.open(port)
+  let assert Ok(sock) = udp.new(port) |> udp.open
   let assert Ok(port_num) = udp.port(sock)
   let assert Ok(address) =
     net.parse_ip_address(host)
@@ -65,7 +65,7 @@ pub fn send_test() {
 
 pub fn send_closed_test() {
   let assert Ok(port) = net.port(0)
-  let assert Ok(sock) = udp.open(port)
+  let assert Ok(sock) = udp.new(port) |> udp.open
   let assert Ok(port_num) = udp.port(sock)
   let assert Ok(address) =
     net.parse_ip_address(host)
@@ -83,10 +83,10 @@ pub fn send_closed_test() {
 pub fn receive_test() {
   let assert Ok(port) = net.port(0)
   // Open a receiver socket and a sender socket
-  let assert Ok(receiver) = udp.open(port)
+  let assert Ok(receiver) = udp.new(port) |> udp.open
   let assert Ok(receiver_port) = udp.port(receiver)
 
-  let assert Ok(sender) = udp.open(port)
+  let assert Ok(sender) = udp.new(port) |> udp.open
   let assert Ok(address) =
     net.parse_ip_address(host)
     |> result.map(net.ip_address)
@@ -106,7 +106,7 @@ pub fn receive_test() {
 
 pub fn receive_timeout_test() {
   let assert Ok(port) = net.port(0)
-  let assert Ok(sock) = udp.open(port)
+  let assert Ok(sock) = udp.new(port) |> udp.open
 
   // No data is sent, so receive should time out
   let assert Ok(timeout) = net.timeout(100)
@@ -115,14 +115,14 @@ pub fn receive_timeout_test() {
 
 pub fn receive_forever_test() {
   let assert Ok(port) = net.port(0)
-  let assert Ok(receiver) = udp.open(port)
+  let assert Ok(receiver) = udp.new(port) |> udp.open
   let assert Ok(receiver_port) = udp.port(receiver)
   let test_subject = process.new_subject()
 
   // Spawn a process that sends data, since receive with Infinity blocks
   let _pid =
     process.spawn(fn() {
-      let assert Ok(sender) = udp.open(port)
+      let assert Ok(sender) = udp.new(port) |> udp.open
       let assert Ok(address) =
         net.parse_ip_address(host)
         |> result.map(net.ip_address)
@@ -145,18 +145,54 @@ pub fn receive_forever_test() {
 
 pub fn receive_forever_closed_test() {
   let assert Ok(port) = net.port(0)
-  let assert Ok(sock) = udp.open(port)
+  let assert Ok(sock) = udp.new(port) |> udp.open
 
   udp.close(sock)
 
   let assert Error(udp.Closed) = udp.receive(sock, 0, net.infinity)
 }
 
+// ---------- open options ---------- //
+
+pub fn open_with_ip_address_test() {
+  let assert Ok(port) = net.port(0)
+  let assert Ok(addr) = net.ipv4_address(127, 0, 0, 1)
+  let assert Ok(sock) = udp.new(port) |> udp.ip_address(addr) |> udp.open
+
+  let assert Ok(assigned_port) = udp.port(sock)
+  assert net.port_to_int(assigned_port) > 0
+
+  udp.close(sock)
+}
+
+pub fn open_ipv6_test() {
+  let assert Ok(port) = net.port(0)
+  let assert Ok(addr) = net.ipv6_address(0, 0, 0, 0, 0, 0, 0, 1)
+  let assert Ok(sock) = udp.new(port) |> udp.ip_address(addr) |> udp.open
+
+  let assert Ok(assigned_port) = udp.port(sock)
+  assert net.port_to_int(assigned_port) > 0
+
+  // Send and receive on IPv6 loopback
+  let assert Ok(Nil) = udp.connect(sock, net.ip_address(addr), assigned_port)
+  let assert Ok(Nil) = udp.send(sock, <<"ipv6":utf8>>)
+
+  let assert Ok(timeout) = net.timeout(1000)
+  let assert Ok(udp.ReceiveData(
+    ip_address: recv_ip,
+    port: _sender_port,
+    payload: <<"ipv6":utf8>>,
+  )) = udp.receive(sock, 0, timeout)
+  assert recv_ip == addr
+
+  udp.close(sock)
+}
+
 // ---------- close ---------- //
 
 pub fn close_test() {
   let assert Ok(port) = net.port(0)
-  let assert Ok(sock) = udp.open(port)
+  let assert Ok(sock) = udp.new(port) |> udp.open
 
   udp.close(sock)
   udp.close(sock)
@@ -164,7 +200,7 @@ pub fn close_test() {
 
 pub fn close_receive_test() {
   let assert Ok(port) = net.port(0)
-  let assert Ok(sock) = udp.open(port)
+  let assert Ok(sock) = udp.new(port) |> udp.open
 
   udp.close(sock)
 

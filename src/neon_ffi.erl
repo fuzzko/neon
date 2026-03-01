@@ -19,7 +19,7 @@
   ssl_recv/3,
   ssl_shutdown/1,
   ssl_close/1,
-  udp_open/1,
+  udp_open/3,
   udp_connect/3,
   udp_send/2,
   udp_receive/3,
@@ -212,8 +212,17 @@ normalise_ssl({error, Reason}) ->
 
 %%% Udp %%%
 
-udp_open(Port) ->
-  normalise_udp(gen_udp:open(Port, [binary, {active, false}])).
+udp_open(Port, MaybeIpAddress, IpVersion) ->
+  case MaybeIpAddress of
+    none ->
+      Inet = ip_version_to_inet(IpVersion),
+      Opts = [binary, {active, false}, Inet],
+      normalise_udp(gen_udp:open(Port, Opts));
+    {some, Addr} ->
+      {Inet, Tuple} = ip_address_and_version(Addr),
+      Opts = [binary, {active, false}, {ip, Tuple}, Inet],
+      normalise_udp(gen_udp:open(Port, Opts))
+  end.
 
 udp_connect(UdpSocket, Address, Port) ->
   Addr = case Address of
