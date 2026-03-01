@@ -156,8 +156,14 @@ ssl_connect(Host, Port, Verify, Timeout) ->
 ssl_connect_timeout(infinity) -> infinity;
 ssl_connect_timeout({timeout, Int}) -> Int.
 
-ssl_connect_opts(_Host, {verify, verify_none}) ->
-  [binary, {packet, raw}, {active, false}, {verify, verify_none}];
+ssl_connect_opts(Host, {verify, verify_none}) ->
+  [
+    binary,
+    {packet, raw},
+    {active, false},
+    {verify, verify_none},
+    {server_name_indication, Host}
+  ];
 
 ssl_connect_opts(Host, {verify, verify_peer}) ->
   [
