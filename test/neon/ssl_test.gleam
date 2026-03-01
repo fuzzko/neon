@@ -123,6 +123,24 @@ pub fn connect_verify_peer_test() {
     |> ssl.connect
 }
 
+pub fn connect_timeout_test() {
+  // Listen but never accept
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
+  let assert Ok(port) = net.port(0)
+  let assert Ok(tcp_listener) = tcp.listen(port, loopback)
+  let assert Ok(port_num) = tcp.port(tcp_listener)
+
+  let assert Ok(short_timeout) = net.timeout(50)
+
+  let assert Error(ssl.Timeout) =
+    ssl.new(host, port_num)
+    |> ssl.verify_none
+    |> ssl.timeout(short_timeout)
+    |> ssl.connect
+
+  tcp.close(tcp_listener)
+}
+
 pub fn connect_error_test() {
   let assert Ok(port) = net.port(1)
 
@@ -451,6 +469,37 @@ pub fn accept_timeout_test() {
 
   let assert Ok(timeout) = net.timeout(100)
   let assert Error(ssl.Timeout) = ssl.accept(listener, timeout)
+}
+
+pub fn handshake_timeout_test() {
+  let data = testing.pkix_test_data(testing.rsa(2048), host)
+
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
+  let assert Ok(port) = net.port(0)
+
+  let assert Ok(listener) = ssl.listen(port, loopback)
+  let assert Ok(listener_port) = ssl.port(listener)
+
+  let hs_opts =
+    ssl.handshake_options(data.server.cert, data.server.key)
+    |> ssl.handshake_cacerts(data.server.cacerts)
+    |> ssl.handshake_timeout({
+      let assert Ok(t) = net.timeout(50)
+      t
+    })
+
+  let assert Ok(address) =
+    net.parse_ip_address(loopback_str)
+    |> result.map(net.ip_address)
+
+  let assert Ok(_tcp_client) =
+    address
+    |> tcp.new(listener_port)
+    |> tcp.connect
+
+  let assert Ok(timeout) = net.timeout(5000)
+  let assert Ok(transport) = ssl.accept(listener, timeout)
+  let assert Error(ssl.Timeout) = ssl.handshake(transport, hs_opts)
 }
 
 // ---------- server: handshake send/receive ---------- //

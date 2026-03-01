@@ -150,3 +150,91 @@ pub fn ipv6_address_version_test() {
   let assert Ok(addr) = net.ipv6_address(0, 0, 0, 0, 0, 0, 0, 1)
   let assert net.Ipv6 = net.ip_address_version(addr)
 }
+
+// ---------- port validation ---------- //
+
+pub fn port_negative_test() {
+  let assert Error(Nil) = net.port(-1)
+}
+
+pub fn port_too_large_test() {
+  let assert Error(Nil) = net.port(65_536)
+}
+
+pub fn port_max_boundary_test() {
+  let assert Ok(port) = net.port(65_535)
+  let assert 65_535 = net.port_to_int(port)
+}
+
+pub fn port_zero_test() {
+  let assert Ok(port) = net.port(0)
+  let assert 0 = net.port_to_int(port)
+}
+
+// ---------- timeout validation ---------- //
+
+pub fn timeout_negative_test() {
+  let assert Error(Nil) = net.timeout(-1)
+}
+
+pub fn timeout_zero_test() {
+  let assert Ok(_) = net.timeout(0)
+}
+
+// ---------- ipv4_address validation ---------- //
+
+pub fn ipv4_address_octet_too_large_test() {
+  let assert Error(Nil) = net.ipv4_address(256, 0, 0, 0)
+}
+
+pub fn ipv4_address_octet_negative_test() {
+  let assert Error(Nil) = net.ipv4_address(-1, 0, 0, 0)
+}
+
+pub fn ipv4_address_second_octet_too_large_test() {
+  let assert Error(Nil) = net.ipv4_address(0, 256, 0, 0)
+}
+
+pub fn ipv4_address_third_octet_negative_test() {
+  let assert Error(Nil) = net.ipv4_address(0, 0, -1, 0)
+}
+
+pub fn ipv4_address_fourth_octet_too_large_test() {
+  let assert Error(Nil) = net.ipv4_address(0, 0, 0, 256)
+}
+
+// ---------- ipv6_address validation ---------- //
+
+pub fn ipv6_address_group_too_large_test() {
+  let assert Error(Nil) = net.ipv6_address(65_536, 0, 0, 0, 0, 0, 0, 0)
+}
+
+pub fn ipv6_address_group_negative_test() {
+  let assert Error(Nil) = net.ipv6_address(-1, 0, 0, 0, 0, 0, 0, 0)
+}
+
+pub fn ipv6_address_last_group_too_large_test() {
+  let assert Error(Nil) = net.ipv6_address(0, 0, 0, 0, 0, 0, 0, 65_536)
+}
+
+pub fn ipv6_address_middle_group_negative_test() {
+  let assert Error(Nil) = net.ipv6_address(0, 0, 0, -1, 0, 0, 0, 0)
+}
+
+// ---------- posix_to_string ---------- //
+
+pub fn posix_to_string_econnrefused_test() {
+  let assert "econnrefused" = net.posix_to_string(net.Econnrefused)
+}
+
+pub fn posix_to_string_eaddrinuse_test() {
+  let assert "eaddrinuse" = net.posix_to_string(net.Eaddrinuse)
+}
+
+pub fn posix_to_string_eacces_test() {
+  let assert "eacces" = net.posix_to_string(net.Eacces)
+}
+
+pub fn posix_to_string_nxdomain_test() {
+  let assert "nxdomain" = net.posix_to_string(net.Nxdomain)
+}

@@ -50,6 +50,20 @@ pub fn connect_ipv6_test() {
     |> tcp.connect
 }
 
+pub fn connect_hostname_test() {
+  let assert Ok(port) = net.port(0)
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
+  let assert Ok(listener) = tcp.listen(port, loopback)
+
+  let assert Ok(port_num) = tcp.port(listener)
+  let address = net.hostname("localhost")
+
+  let assert Ok(_socket) =
+    address
+    |> tcp.new(port_num)
+    |> tcp.connect
+}
+
 pub fn connect_error_test() {
   let assert Ok(port) = net.port(1)
   let assert Ok(address) =
