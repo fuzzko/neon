@@ -232,7 +232,7 @@ pub fn passive(socket: Ssl) -> Result(Ssl, SslError) {
 /// delivered as messages to the socket owner's mailbox. Use this function
 /// to register handlers for these messages on a `Selector`.
 pub fn select(selector: Selector(t), mapper: fn(SslMessage) -> t) -> Selector(t) {
-  let map = fn(msg) { mapper(handle_ssl_message(msg)) }
+  let map = fn(msg) { mapper(handle_ssl_message_(msg)) }
   selector
   |> process.select_record(tag: atom.create("ssl"), fields: 2, mapping: map)
   |> process.select_record(
@@ -355,7 +355,7 @@ fn ssl_active_(socket: Ssl) -> Result(Ssl, SslError)
 fn ssl_passive_(socket: Ssl) -> Result(Ssl, SslError)
 
 @external(erlang, "ssl_ffi", "handle_ssl_message")
-fn handle_ssl_message(message: dynamic.Dynamic) -> SslMessage
+fn handle_ssl_message_(message: dynamic.Dynamic) -> SslMessage
 
 @external(erlang, "ssl_ffi", "connect")
 fn ssl_connect_(
