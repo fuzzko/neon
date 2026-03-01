@@ -1,46 +1,46 @@
 -module(ssl_ffi).
 
 -export([
-  ssl_start/0,
-  ssl_port/1,
-  ssl_connect/4,
-  ssl_upgrade/4,
-  ssl_send/2,
-  ssl_recv/3,
-  ssl_shutdown/1,
-  ssl_close/1,
-  ssl_listen/2,
-  ssl_transport_accept/2,
-  ssl_handshake/5
+  start/0,
+  port/1,
+  connect/4,
+  upgrade/4,
+  send/2,
+  recv/3,
+  shutdown/1,
+  close/1,
+  listen/2,
+  transport_accept/2,
+  handshake/5
 ]).
 
-ssl_start() ->
+start() ->
   Resp = ssl:start(),
-  normalise_ssl(Resp).
+  normalise(Resp).
 
-ssl_port(SslSocket) ->
+port(SslSocket) ->
   Resp = ssl:sockname(SslSocket),
-  normalise_ssl(Resp).
+  normalise(Resp).
 
-ssl_upgrade(TCPSocket, Host, Verify, Timeout) ->
+upgrade(TCPSocket, Host, Verify, Timeout) ->
   T = case Timeout of
     infinity -> infinity;
     {timeout, Int} -> Int
   end,
-  TLSOpts = ssl_connect_opts(Host, Verify),
+  TLSOpts = connect_opts(Host, Verify),
   Resp = ssl:connect(TCPSocket, TLSOpts, T),
-  normalise_ssl(Resp).
+  normalise(Resp).
 
-ssl_connect(Host, Port, Verify, Timeout) ->
+connect(Host, Port, Verify, Timeout) ->
   T = case Timeout of
     infinity -> infinity;
     {timeout, Int} -> Int
   end,
-  TLSOpts = ssl_connect_opts(Host, Verify),
+  TLSOpts = connect_opts(Host, Verify),
   Resp = ssl:connect(Host, Port, TLSOpts, T),
-  normalise_ssl(Resp).
+  normalise(Resp).
 
-ssl_connect_opts(Host, {verify, verify_none}) ->
+connect_opts(Host, {verify, verify_none}) ->
   [
     binary,
     {packet, raw},
@@ -49,7 +49,7 @@ ssl_connect_opts(Host, {verify, verify_none}) ->
     {server_name_indication, Host}
   ];
 
-ssl_connect_opts(Host, {verify, verify_peer}) ->
+connect_opts(Host, {verify, verify_peer}) ->
   [
     binary,
     {packet, raw},
@@ -62,27 +62,27 @@ ssl_connect_opts(Host, {verify, verify_peer}) ->
     ]
   }].
 
-ssl_shutdown(SslSocket) ->
+shutdown(SslSocket) ->
   Shut = ssl:shutdown(SslSocket, read_write),
-  normalise_ssl(Shut).
+  normalise(Shut).
 
-ssl_close(SslSocket) ->
+close(SslSocket) ->
   Resp = ssl:close(SslSocket),
-  normalise_ssl(Resp).
+  normalise(Resp).
 
-ssl_recv(SslSocket, Size, Timeout) ->
+recv(SslSocket, Size, Timeout) ->
   T = case Timeout of
     infinity -> infinity;
     {timeout, Int} -> Int
   end,
   Resp = ssl:recv(SslSocket, Size, T),
-  normalise_ssl(Resp).
+  normalise(Resp).
 
-ssl_send(SslSocket, Packet) ->
+send(SslSocket, Packet) ->
   Sent = ssl:send(SslSocket, Packet),
-  normalise_ssl(Sent).
+  normalise(Sent).
 
-ssl_listen(Port, IpAddress) ->
+listen(Port, IpAddress) ->
   {Inet, Address} = ip_address_and_version(IpAddress),
 
   Options = [
@@ -94,17 +94,17 @@ ssl_listen(Port, IpAddress) ->
     Inet
   ],
   Resp = ssl:listen(Port, Options),
-  normalise_ssl(Resp).
+  normalise(Resp).
 
-ssl_transport_accept(ListenSocket, Timeout) ->
+transport_accept(ListenSocket, Timeout) ->
   T = case Timeout of
     infinity -> infinity;
     {timeout, Int} -> Int
   end,
   Resp = ssl:transport_accept(ListenSocket, T),
-  normalise_ssl(Resp).
+  normalise(Resp).
 
-ssl_handshake(Socket, Cert, Key, MaybeCaCerts, Timeout) ->
+handshake(Socket, Cert, Key, MaybeCaCerts, Timeout) ->
   T = case Timeout of
     infinity -> infinity;
     {timeout, Int} -> Int
@@ -123,26 +123,26 @@ ssl_handshake(Socket, Cert, Key, MaybeCaCerts, Timeout) ->
   end,
 
   Resp = ssl:handshake(Socket, Opts, T),
-  normalise_ssl(Resp).
+  normalise(Resp).
 
 private_key_to_erl({rsa_private_key, Der}) -> {'RSAPrivateKey', Der};
 private_key_to_erl({ec_private_key, Der}) -> {'ECPrivateKey', Der}.
 
-normalise_ssl(ok) -> {ok, nil};
-normalise_ssl({ok, {_Address, Port}}) -> {ok, {port, Port}};
-normalise_ssl({ok, SslSocket}) -> {ok, SslSocket};
-normalise_ssl({ok, SslSocket, _Ext}) -> {ok, SslSocket};
-normalise_ssl({error, closed}) -> {error, closed};
-normalise_ssl({error, timeout}) -> {error, timeout};
-normalise_ssl({error, {tls_alert, {Alert, Description}}}) ->
+normalise(ok) -> {ok, nil};
+normalise({ok, {_Address, Port}}) -> {ok, {port, Port}};
+normalise({ok, SslSocket}) -> {ok, SslSocket};
+normalise({ok, SslSocket, _Ext}) -> {ok, SslSocket};
+normalise({error, closed}) -> {error, closed};
+normalise({error, timeout}) -> {error, timeout};
+normalise({error, {tls_alert, {Alert, Description}}}) ->
   Desc = unicode:characters_to_binary(Description),
   {error, {tls_alert, {Alert, Desc}}};
-normalise_ssl({error, Reason}) when is_atom(Reason) ->
+normalise({error, Reason}) when is_atom(Reason) ->
   {error, {posix, Reason}};
-normalise_ssl({error, Reason}) ->
+normalise({error, Reason}) ->
   Formatted = ssl:format_error(Reason),
   Description = unicode:characters_to_binary(Formatted),
-  {error, {ssl_error, Description}}.
+  {error, {error, Description}}.
 
 ip_address_and_version({ipv4_address, A, B, C, D}) ->
   {inet, {A, B, C, D}};
