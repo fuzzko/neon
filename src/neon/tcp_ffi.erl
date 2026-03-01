@@ -43,13 +43,13 @@ ip_version_to_inet(ipv4) -> inet.
 active(TcpSocket) ->
   case inet:setopts(TcpSocket, [{active, true}]) of
     ok -> {ok, TcpSocket};
-    {error, Posix} -> {error, {posix, Posix}}
+    Error -> normalise(Error)
   end.
 
 passive(TcpSocket) ->
   case inet:setopts(TcpSocket, [{active, false}]) of
     ok -> {ok, TcpSocket};
-    {error, Posix} -> {error, {posix, Posix}}
+    Error -> normalise(Error)
   end.
 
 shutdown(TcpSocket) ->

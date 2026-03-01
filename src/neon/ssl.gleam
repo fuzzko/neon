@@ -1,4 +1,7 @@
+import gleam/dynamic
+import gleam/erlang/atom
 import gleam/erlang/charlist.{type Charlist}
+import gleam/erlang/process.{type Selector}
 import gleam/option.{type Option, None, Some}
 import neon/net
 import neon/tcp.{type Tcp}
@@ -71,6 +74,18 @@ pub type SslError {
   TlsAlert(TlsAlert, String)
   /// A generic SSL error with a description.
   SslError(String)
+}
+
+/// Messages received from an SSL socket in active mode.
+///
+/// Use `select` to register handlers for these messages on a `Selector`.
+pub type SslMessage {
+  /// Data received from the socket.
+  Packet(Ssl, BitArray)
+  /// The socket was closed by the remote peer.
+  SocketClosed(Ssl)
+  /// An error occurred on the socket.
+  SocketError(Ssl, SslError)
 }
 
 type VerifyValue {
@@ -168,6 +183,42 @@ pub fn receive(
     True -> ssl_receive_(socket, length, timeout)
     False -> Error(SslError("Length must be positive"))
   }
+}
+
+/// Sets the socket to active mode.
+///
+/// In active mode, incoming data is delivered as messages to the socket
+/// owner's mailbox. Use `select` to handle these messages.
+pub fn active(socket: Ssl) -> Result(Ssl, SslError) {
+  ssl_active_(socket)
+}
+
+/// Sets the socket to passive mode.
+///
+/// In passive mode, data must be read explicitly using `receive`.
+pub fn passive(socket: Ssl) -> Result(Ssl, SslError) {
+  ssl_passive_(socket)
+}
+
+/// Adds SSL message handlers to a selector for use with active mode sockets.
+///
+/// In active mode, incoming data, close notifications, and errors are
+/// delivered as messages to the socket owner's mailbox. Use this function
+/// to register handlers for these messages on a `Selector`.
+pub fn select(selector: Selector(t), mapper: fn(SslMessage) -> t) -> Selector(t) {
+  let map = fn(msg) { mapper(handle_ssl_message(msg)) }
+  selector
+  |> process.select_record(tag: atom.create("ssl"), fields: 2, mapping: map)
+  |> process.select_record(
+    tag: atom.create("ssl_closed"),
+    fields: 1,
+    mapping: map,
+  )
+  |> process.select_record(
+    tag: atom.create("ssl_error"),
+    fields: 2,
+    mapping: map,
+  )
 }
 
 /// Shuts down the SSL/TLS connection for both reading and writing.
@@ -269,6 +320,15 @@ fn ssl_upgrade_(
   verify: Verify,
   timeout: net.Timeout,
 ) -> Result(Ssl, SslError)
+
+@external(erlang, "ssl_ffi", "active")
+fn ssl_active_(socket: Ssl) -> Result(Ssl, SslError)
+
+@external(erlang, "ssl_ffi", "passive")
+fn ssl_passive_(socket: Ssl) -> Result(Ssl, SslError)
+
+@external(erlang, "ssl_ffi", "handle_ssl_message")
+fn handle_ssl_message(message: dynamic.Dynamic) -> SslMessage
 
 @external(erlang, "ssl_ffi", "connect")
 fn ssl_connect_(

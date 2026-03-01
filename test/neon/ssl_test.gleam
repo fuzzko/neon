@@ -254,6 +254,100 @@ pub fn shutdown_closed_test() {
   let assert Error(ssl.Closed) = ssl.shutdown(ssl_socket)
 }
 
+// ---------- active ---------- //
+
+pub fn active_test() {
+  let #(client, server) = connected_pair()
+
+  // Put client into active mode
+  let assert Ok(_) = ssl.active(client)
+
+  // Server sends data
+  let assert Ok(Nil) = ssl.send(server, <<"hello active":utf8>>)
+
+  // Client receives data as an SslMessage via selector
+  let selector =
+    process.new_selector()
+    |> ssl.select(fn(msg) { msg })
+
+  let assert Ok(ssl.Packet(_, <<"hello active":utf8>>)) =
+    process.selector_receive(from: selector, within: 1000)
+}
+
+pub fn active_closed_test() {
+  let #(client, server) = connected_pair()
+
+  // Put client into active mode
+  let assert Ok(_) = ssl.active(client)
+
+  // Server closes its side
+  let assert Ok(Nil) = ssl.close(server)
+
+  // Client receives SocketClosed message
+  let selector =
+    process.new_selector()
+    |> ssl.select(fn(msg) { msg })
+
+  let assert Ok(ssl.SocketClosed(_)) =
+    process.selector_receive(from: selector, within: 1000)
+}
+
+pub fn passive_test() {
+  let #(client, server) = connected_pair()
+
+  // Put client into active mode, then immediately back to passive
+  let assert Ok(client) = ssl.active(client)
+  let assert Ok(_) = ssl.passive(client)
+
+  // Server sends data
+  let assert Ok(Nil) = ssl.send(server, <<"passive data":utf8>>)
+
+  // Give data time to arrive at the socket
+  process.sleep(50)
+
+  // No message should be delivered since socket is passive
+  let selector =
+    process.new_selector()
+    |> ssl.select(fn(msg) { msg })
+
+  let assert Error(Nil) = process.selector_receive(from: selector, within: 100)
+
+  // But synchronous receive should work
+  let assert Ok(timeout) = net.timeout(1000)
+  let assert Ok(<<"passive data":utf8>>) = ssl.receive(client, 0, timeout)
+}
+
+pub fn active_then_passive_test() {
+  let #(client, server) = connected_pair()
+
+  // Put client into active mode
+  let assert Ok(client) = ssl.active(client)
+
+  // Server sends first message
+  let assert Ok(Nil) = ssl.send(server, <<"first":utf8>>)
+
+  // Client receives first message via selector
+  let selector =
+    process.new_selector()
+    |> ssl.select(fn(msg) { msg })
+
+  let assert Ok(ssl.Packet(_, <<"first":utf8>>)) =
+    process.selector_receive(from: selector, within: 1000)
+
+  // Switch to passive
+  let assert Ok(_) = ssl.passive(client)
+
+  // Server sends second message
+  let assert Ok(Nil) = ssl.send(server, <<"second":utf8>>)
+
+  // Give data time to arrive
+  process.sleep(50)
+
+  // Client receives second message synchronously
+  let assert Ok(timeout) = net.timeout(1000)
+  let assert Ok(<<"second":utf8>>) = ssl.receive(client, 0, timeout)
+}
+
 // ---------- port ---------- //
 
 pub fn port_test() {

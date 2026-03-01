@@ -11,7 +11,10 @@
   close/1,
   listen/2,
   transport_accept/2,
-  handshake/5
+  handshake/5,
+  active/1,
+  passive/1,
+  handle_ssl_message/1
 ]).
 
 start() ->
@@ -61,6 +64,18 @@ connect_opts(Host, {verify, verify_peer}) ->
       {match_fun, public_key:pkix_verify_hostname_match_fun(https)}
     ]
   }].
+
+active(SslSocket) ->
+  case ssl:setopts(SslSocket, [{active, true}]) of
+    ok -> {ok, SslSocket};
+    Error -> normalise(Error)
+  end.
+
+passive(SslSocket) ->
+  case ssl:setopts(SslSocket, [{active, false}]) of
+    ok -> {ok, SslSocket};
+    Error -> normalise(Error)
+  end.
 
 shutdown(SslSocket) ->
   Shut = ssl:shutdown(SslSocket, read_write),
@@ -148,3 +163,21 @@ ip_address_and_version({ipv4_address, A, B, C, D}) ->
   {inet, {A, B, C, D}};
 ip_address_and_version({ipv6_address, A, B, C, D, E, F, G, H}) ->
   {inet6, {A, B, C, D, E, F, G, H}}.
+
+handle_ssl_message({ssl, Socket, Data}) ->
+  {packet, Socket, Data};
+handle_ssl_message({ssl_closed, Socket}) ->
+  {socket_closed, Socket};
+handle_ssl_message({ssl_error, Socket, Reason}) ->
+  {socket_error, Socket, normalise_error(Reason)}.
+
+normalise_error(closed) -> closed;
+normalise_error(timeout) -> timeout;
+normalise_error({tls_alert, {Alert, Description}}) ->
+  Desc = unicode:characters_to_binary(Description),
+  {tls_alert, {Alert, Desc}};
+normalise_error(Posix) when is_atom(Posix) -> {posix, Posix};
+normalise_error(Reason) ->
+  Formatted = ssl:format_error(Reason),
+  Description = unicode:characters_to_binary(Formatted),
+  {error, Description}.
