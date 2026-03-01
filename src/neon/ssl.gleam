@@ -181,7 +181,7 @@ pub fn receive(
 ) -> Result(BitArray, SslError) {
   case length >= 0 {
     True -> ssl_receive_(socket, length, timeout)
-    False -> Error(SslError("Length must be positive"))
+    False -> Error(SslError("Length must be non-negative"))
   }
 }
 
