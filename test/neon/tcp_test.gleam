@@ -211,6 +211,112 @@ pub fn shutdown_closed_test() {
   let assert Error(_posix) = tcp.shutdown(socket)
 }
 
+// ---------- active ---------- //
+
+pub fn active_test() {
+  let #(client, listener) = connected_pair()
+
+  let assert Ok(timeout) = net.timeout(1000)
+  let assert Ok(server) = tcp.accept(listener, timeout)
+
+  // Put client into active mode
+  let assert Ok(_) = tcp.active(client)
+
+  // Server sends data
+  let assert Ok(Nil) = tcp.send(server, <<"hello active":utf8>>)
+
+  // Client receives data as a TcpMessage via selector
+  let selector =
+    process.new_selector()
+    |> tcp.select(fn(msg) { msg })
+
+  let assert Ok(tcp.Packet(_, <<"hello active":utf8>>)) =
+    process.selector_receive(from: selector, within: 1000)
+}
+
+pub fn active_closed_test() {
+  let #(client, listener) = connected_pair()
+
+  let assert Ok(timeout) = net.timeout(1000)
+  let assert Ok(server) = tcp.accept(listener, timeout)
+
+  // Put client into active mode
+  let assert Ok(_) = tcp.active(client)
+
+  // Server closes its side
+  tcp.close(server)
+
+  // Client receives SocketClosed message
+  let selector =
+    process.new_selector()
+    |> tcp.select(fn(msg) { msg })
+
+  let assert Ok(tcp.SocketClosed(_)) =
+    process.selector_receive(from: selector, within: 1000)
+}
+
+pub fn passive_test() {
+  let #(client, listener) = connected_pair()
+
+  let assert Ok(timeout) = net.timeout(1000)
+  let assert Ok(server) = tcp.accept(listener, timeout)
+
+  // Put client into active mode, then immediately back to passive
+  let assert Ok(client) = tcp.active(client)
+  let assert Ok(_) = tcp.passive(client)
+
+  // Server sends data
+  let assert Ok(Nil) = tcp.send(server, <<"passive data":utf8>>)
+
+  // Give data time to arrive at the socket
+  process.sleep(50)
+
+  // No message should be delivered since socket is passive
+  let selector =
+    process.new_selector()
+    |> tcp.select(fn(msg) { msg })
+
+  let assert Error(Nil) = process.selector_receive(from: selector, within: 100)
+
+  // But synchronous receive should work
+  let assert Ok(timeout) = net.timeout(1000)
+  let assert Ok(<<"passive data":utf8>>) = tcp.receive(client, 0, timeout)
+}
+
+pub fn active_then_passive_test() {
+  let #(client, listener) = connected_pair()
+
+  let assert Ok(timeout) = net.timeout(1000)
+  let assert Ok(server) = tcp.accept(listener, timeout)
+
+  // Put client into active mode
+  let assert Ok(client) = tcp.active(client)
+
+  // Server sends first message
+  let assert Ok(Nil) = tcp.send(server, <<"first":utf8>>)
+
+  // Client receives first message via selector
+  let selector =
+    process.new_selector()
+    |> tcp.select(fn(msg) { msg })
+
+  let assert Ok(tcp.Packet(_, <<"first":utf8>>)) =
+    process.selector_receive(from: selector, within: 1000)
+
+  // Switch to passive
+  let assert Ok(_) = tcp.passive(client)
+
+  // Server sends second message
+  let assert Ok(Nil) = tcp.send(server, <<"second":utf8>>)
+
+  // Give data time to arrive
+  process.sleep(50)
+
+  // Client receives second message synchronously
+  let assert Ok(timeout) = net.timeout(1000)
+  let assert Ok(<<"second":utf8>>) = tcp.receive(client, 0, timeout)
+}
+
 // Creates a TCP listener on an OS-assigned port, connects a client socket
 // to it, and returns the client socket along with the listener port
 fn connected_pair() -> #(Tcp, Tcp) {

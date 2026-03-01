@@ -1,3 +1,6 @@
+import gleam/dynamic
+import gleam/erlang/atom
+import gleam/erlang/process.{type Selector}
 import gleam/option
 import gleam/result
 import neon/net
@@ -17,6 +20,16 @@ pub type TcpError {
   Posix(net.Posix)
   /// A generic TCP error with a description.
   TcpError(String)
+}
+
+/// Messages received from a TCP socket.
+pub type TcpMessage {
+  /// Data received from the socket.
+  Packet(Tcp, BitArray)
+  /// The socket was closed.
+  SocketClosed(Tcp)
+  /// An error occurred on the socket.
+  SocketError(Tcp, TcpError)
 }
 
 /// Options for establishing a TCP connection.
@@ -82,6 +95,35 @@ pub fn receive(
   }
 }
 
+/// Sets the socket to active mode.
+///
+/// In active mode, incoming data is delivered as messages to the socket
+/// owner's mailbox. Use `select` to handle these messages.
+pub fn active(socket: Tcp) -> Result(Tcp, TcpError) {
+  tcp_active_(socket)
+}
+
+/// Sets the socket to passive mode.
+///
+/// In passive mode, data must be read explicitly using `receive`.
+pub fn passive(socket: Tcp) -> Result(Tcp, TcpError) {
+  tcp_passive_(socket)
+}
+
+/// Adds TCP message handlers to a selector for use with active mode sockets.
+///
+/// In active mode, incoming data, close notifications, and errors are
+/// delivered as messages to the socket owner's mailbox. Use this function
+/// to register handlers for these messages on a `Selector`.
+pub fn select(selector: Selector(t), mapper: fn(TcpMessage) -> t) -> Selector(t) {
+  let mapping = fn(msg) { mapper(handle_tcp_message_(msg)) }
+
+  selector
+  |> process.select_record(tag: atom.create("tcp"), fields: 2, mapping:)
+  |> process.select_record(tag: atom.create("tcp_closed"), fields: 1, mapping:)
+  |> process.select_record(tag: atom.create("tcp_error"), fields: 2, mapping:)
+}
+
 /// Shuts down the socket for both reading and writing.
 pub fn shutdown(socket: Tcp) -> Result(Nil, TcpError) {
   tcp_shutdown_(socket)
@@ -116,6 +158,15 @@ pub fn port(socket: Tcp) -> Result(net.Port, Nil) {
   inet_port_(socket)
   |> result.try(net.port)
 }
+
+@external(erlang, "tcp_ffi", "active")
+fn tcp_active_(socket: Tcp) -> Result(Tcp, TcpError)
+
+@external(erlang, "tcp_ffi", "passive")
+fn tcp_passive_(socket: Tcp) -> Result(Tcp, TcpError)
+
+@external(erlang, "tcp_ffi", "handle_tcp_message")
+fn handle_tcp_message_(message: dynamic.Dynamic) -> TcpMessage
 
 @external(erlang, "tcp_ffi", "connect")
 fn tcp_connect_(

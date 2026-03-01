@@ -1,6 +1,9 @@
 -module(tcp_ffi).
 
 -export([
+  active/1,
+  passive/1,
+  handle_tcp_message/1,
   accept/2,
   close/1,
   listen/2,
@@ -36,6 +39,18 @@ connect(Address, {port, Port}, IpVersion, Timeout) ->
 
 ip_version_to_inet(ipv6) -> inet6;
 ip_version_to_inet(ipv4) -> inet.
+
+active(TcpSocket) ->
+  case inet:setopts(TcpSocket, [{active, true}]) of
+    ok -> {ok, TcpSocket};
+    {error, Posix} -> {error, {posix, Posix}}
+  end.
+
+passive(TcpSocket) ->
+  case inet:setopts(TcpSocket, [{active, false}]) of
+    ok -> {ok, TcpSocket};
+    {error, Posix} -> {error, {posix, Posix}}
+  end.
 
 shutdown(TcpSocket) ->
   Shut = gen_tcp:shutdown(TcpSocket, read_write),
@@ -91,3 +106,15 @@ normalise({error, timeout} = E) -> E;
 normalise({error, system_limit} = E) -> E;
 normalise({error, {timeout, _}}) -> {error, timeout};
 normalise({error, Posix}) -> {error, {posix, Posix}}.
+
+handle_tcp_message({tcp, Socket, Data}) ->
+  {packet, Socket, Data};
+handle_tcp_message({tcp_closed, Socket}) ->
+  {socket_closed, Socket};
+handle_tcp_message({tcp_error, Socket, Reason}) ->
+  {socket_error, Socket, normalise_error(Reason)}.
+
+normalise_error(closed) -> closed;
+normalise_error(timeout) -> timeout;
+normalise_error(system_limit) -> system_limit;
+normalise_error(Posix) -> {posix, Posix}.
