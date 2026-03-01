@@ -110,7 +110,10 @@ pub fn receive(
   length: Int,
   timeout: net.Timeout,
 ) -> Result(BitArray, SslError) {
-  ssl_receive_(socket, length, timeout)
+  case length >= 0 {
+    True -> ssl_receive_(socket, length, timeout)
+    False -> Error(SslError("Length must be positive"))
+  }
 }
 
 pub fn shutdown(socket: Ssl) -> Result(Nil, SslError) {

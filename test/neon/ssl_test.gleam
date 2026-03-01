@@ -176,6 +176,13 @@ pub fn receive_forever_test() {
   let assert Ok(_) = process.receive(test_subject, 1000)
 }
 
+pub fn receive_negative_length_test() {
+  let #(ssl_socket, _server_ssl) = testing.ssl_connected_pair()
+
+  let assert Ok(timeout) = net.timeout(1000)
+  let assert Error(ssl.SslError(_)) = ssl.receive(ssl_socket, -1, timeout)
+}
+
 pub fn receive_closed_test() {
   let #(ssl_socket, server_ssl) = testing.ssl_connected_pair()
 
