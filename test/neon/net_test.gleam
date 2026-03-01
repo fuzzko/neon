@@ -1,7 +1,5 @@
 import neon/net
 
-// ---------- parse_ip_address ---------- //
-
 pub fn parse_ipv4_loopback_test() {
   let assert Ok(expected) = net.ipv4_address(127, 0, 0, 1)
   let assert Ok(actual) = net.parse_ip_address("127.0.0.1")
@@ -83,8 +81,6 @@ pub fn parse_invalid_ipv4_extra_octets_test() {
   let assert Error(net.Einval) = net.parse_ip_address("127.0.0.1.1")
 }
 
-// ---------- ip_address_to_string ---------- //
-
 pub fn ipv4_loopback_to_string_test() {
   let assert Ok(addr) = net.ipv4_address(127, 0, 0, 1)
   let assert "127.0.0.1" = net.ip_address_to_string(addr)
@@ -143,4 +139,14 @@ pub fn roundtrip_ipv4_test() {
 pub fn roundtrip_ipv6_test() {
   let assert Ok(addr) = net.parse_ip_address("::1")
   let assert "::1" = net.ip_address_to_string(addr)
+}
+
+pub fn ipv4_address_version_test() {
+  let assert Ok(addr) = net.ipv4_address(127, 0, 0, 1)
+  let assert net.Ipv4 = net.ip_address_version(addr)
+}
+
+pub fn ipv6_address_version_test() {
+  let assert Ok(addr) = net.ipv6_address(0, 0, 0, 0, 0, 0, 0, 1)
+  let assert net.Ipv6 = net.ip_address_version(addr)
 }

@@ -66,6 +66,13 @@ pub fn ipv6_address(
   }
 }
 
+pub fn ip_address_version(address: IpAddress) -> IpVersion {
+  case address {
+    Ipv4Address(..) -> Ipv4
+    Ipv6Address(..) -> Ipv6
+  }
+}
+
 pub type IpVersion {
   Ipv4
   Ipv6
