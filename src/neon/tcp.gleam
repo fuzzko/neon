@@ -119,7 +119,7 @@ pub fn port(socket: Tcp) -> Result(net.Port, Nil) {
   |> result.try(net.port)
 }
 
-@external(erlang, "neon_ffi", "tcp_connect")
+@external(erlang, "tcp_ffi", "tcp_connect")
 fn tcp_connect_(
   address: net.Address,
   port: Int,
@@ -127,26 +127,26 @@ fn tcp_connect_(
   timeout: net.Timeout,
 ) -> Result(Tcp, TcpError)
 
-@external(erlang, "neon_ffi", "tcp_recv")
+@external(erlang, "tcp_ffi", "tcp_recv")
 fn tcp_receive_(
   socket: Tcp,
   length: Int,
   timeout: net.Timeout,
 ) -> Result(BitArray, TcpError)
 
-@external(erlang, "neon_ffi", "tcp_send")
+@external(erlang, "tcp_ffi", "tcp_send")
 fn tcp_send_(socket: Tcp, packet: BitArray) -> Result(Nil, TcpError)
 
-@external(erlang, "neon_ffi", "tcp_shutdown")
+@external(erlang, "tcp_ffi", "tcp_shutdown")
 fn tcp_shutdown_(socket: Tcp) -> Result(Nil, TcpError)
 
-@external(erlang, "neon_ffi", "tcp_listen")
+@external(erlang, "tcp_ffi", "tcp_listen")
 fn tcp_listen_(port: Int, ip_address: net.IpAddress) -> Result(Tcp, TcpError)
 
-@external(erlang, "neon_ffi", "tcp_accept")
+@external(erlang, "tcp_ffi", "tcp_accept")
 fn tcp_accept_(listener: Tcp, timeout: net.Timeout) -> Result(Tcp, TcpError)
 
-@external(erlang, "neon_ffi", "tcp_close")
+@external(erlang, "tcp_ffi", "tcp_close")
 fn tcp_close_(socket: Tcp) -> Nil
 
 @external(erlang, "inet_ffi", "inet_port")
