@@ -47,7 +47,7 @@ pub opaque type ConnectOptions {
 
 /// Creates connection options for the given address and port.
 ///
-/// Defaults to IPv4 if the address is a `net.Hostname` and an infinite timeout.
+/// Defaults to IPv4 if the address is a `net.hostname`. Default timeout is set to `infinity`.
 pub fn new(address: net.Address, port: net.Port) -> ConnectOptions {
   let ip_version =
     net.address_to_ip_version(address)
