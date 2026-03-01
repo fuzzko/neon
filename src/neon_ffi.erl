@@ -19,6 +19,9 @@
   ssl_recv/3,
   ssl_shutdown/1,
   ssl_close/1,
+  ssl_listen/2,
+  ssl_transport_accept/2,
+  ssl_handshake/5,
   udp_open/3,
   udp_connect/3,
   udp_send/2,
@@ -56,10 +59,7 @@ tcp_connect(Address, Port, IpVersion, Timeout) ->
     {ip_address, {ipv6_address, A, B, C, D, E, F, G, H}} -> {A, B, C, D, E, F, G, H}
   end,
 
-  ConnectTimeout = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
+  T = normalise_timeout(Timeout),
 
   Opts = [
     binary,
@@ -68,7 +68,7 @@ tcp_connect(Address, Port, IpVersion, Timeout) ->
     Inet
   ],
 
-  Resp = gen_tcp:connect(Addr, Port, Opts, ConnectTimeout),
+  Resp = gen_tcp:connect(Addr, Port, Opts, T),
   normalise_tcp(Resp).
 
 ip_version_to_inet(ipv6) -> inet6;
@@ -79,12 +79,8 @@ tcp_shutdown(TcpSocket) ->
   normalise_tcp(Shut).
 
 tcp_recv(TcpSocket, Size, Timeout) ->
-  RecvTimeout = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
-
-  Resp = gen_tcp:recv(TcpSocket, Size, RecvTimeout),
+  T = normalise_timeout(Timeout),
+  Resp = gen_tcp:recv(TcpSocket, Size, T),
   normalise_tcp(Resp).
 
 tcp_send(TcpSocket, Packet) ->
@@ -111,12 +107,8 @@ ip_address_and_version({ipv6_address, A, B, C, D, E, F, G, H}) ->
   {inet6, {A, B, C, D, E, F, G, H}}.
 
 tcp_accept(TcpSocket, Timeout) ->
-  AcceptTimeout = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
-
-  Resp = gen_tcp:accept(TcpSocket, AcceptTimeout),
+  T = normalise_timeout(Timeout),
+  Resp = gen_tcp:accept(TcpSocket, T),
   normalise_tcp(Resp).
 
 tcp_close(TcpSocket) ->
@@ -142,19 +134,16 @@ ssl_port(SslSocket) ->
   normalise_ssl(Resp).
 
 ssl_upgrade(TCPSocket, Host, Verify, Timeout) ->
-  T = ssl_connect_timeout(Timeout),
+  T = normalise_timeout(Timeout),
   TLSOpts = ssl_connect_opts(Host, Verify),
   Resp = ssl:connect(TCPSocket, TLSOpts, T),
   normalise_ssl(Resp).
 
 ssl_connect(Host, Port, Verify, Timeout) ->
-  T = ssl_connect_timeout(Timeout),
+  T = normalise_timeout(Timeout),
   TLSOpts = ssl_connect_opts(Host, Verify),
   Resp = ssl:connect(Host, Port, TLSOpts, T),
   normalise_ssl(Resp).
-
-ssl_connect_timeout(infinity) -> infinity;
-ssl_connect_timeout({timeout, Int}) -> Int.
 
 ssl_connect_opts(Host, {verify, verify_none}) ->
   [
@@ -187,25 +176,60 @@ ssl_close(SslSocket) ->
   normalise_ssl(Resp).
 
 ssl_recv(SslSocket, Size, Timeout) ->
-  RecvTimeout = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
-
-  Resp = ssl:recv(SslSocket, Size, RecvTimeout),
+  T = normalise_timeout(Timeout),
+  Resp = ssl:recv(SslSocket, Size, T),
   normalise_ssl(Resp).
 
 ssl_send(SslSocket, Packet) ->
   Sent = ssl:send(SslSocket, Packet),
   normalise_ssl(Sent).
 
+ssl_listen(Port, IpAddress) ->
+  {Inet, Address} = ip_address_and_version(IpAddress),
+
+  Options = [
+    binary,
+    {ip, Address},
+    {packet, raw},
+    {active, false},
+    {reuseaddr, true},
+    Inet
+  ],
+  Resp = ssl:listen(Port, Options),
+  normalise_ssl(Resp).
+
+ssl_transport_accept(ListenSocket, Timeout) ->
+  T = normalise_timeout(Timeout),
+  Resp = ssl:transport_accept(ListenSocket, T),
+  normalise_ssl(Resp).
+
+ssl_handshake(Socket, Cert, Key, MaybeCaCerts, Timeout) ->
+  T = normalise_timeout(Timeout),
+  ErlKey = private_key_to_erl(Key),
+
+  BaseOpts = [
+    {cert, Cert},
+    {key, ErlKey},
+    {verify, verify_none}
+  ],
+
+  Opts = case MaybeCaCerts of
+    none -> BaseOpts;
+    {some, CaCerts} -> [{cacerts, CaCerts} | BaseOpts]
+  end,
+
+  Resp = ssl:handshake(Socket, Opts, T),
+  normalise_ssl(Resp).
+
+private_key_to_erl({rsa_private_key, Der}) -> {'RSAPrivateKey', Der};
+private_key_to_erl({ec_private_key, Der}) -> {'ECPrivateKey', Der}.
+
 normalise_ssl(ok) -> {ok, nil};
 normalise_ssl({ok, {_Address, Port}}) -> {ok, {port, Port}};
 normalise_ssl({ok, SslSocket}) -> {ok, SslSocket};
+normalise_ssl({ok, SslSocket, _Ext}) -> {ok, SslSocket};
 normalise_ssl({error, closed}) -> {error, closed};
 normalise_ssl({error, timeout}) -> {error, timeout};
-normalise_ssl({error, {options, _}}) ->
-  {error, invalid_options};
 normalise_ssl({error, {tls_alert, {Alert, Description}}}) ->
   Desc = unicode:characters_to_binary(Description),
   {error, {tls_alert, {Alert, Desc}}};
@@ -244,12 +268,8 @@ udp_send(UdpSocket, Packet) ->
   normalise_udp(Resp).
 
 udp_receive(UdpSocket, Length, Timeout) ->
-  RecvTimeout = case Timeout of
-    infinity -> infinity;
-    {timeout, Int} -> Int
-  end,
-
-  Resp = gen_udp:recv(UdpSocket, Length, RecvTimeout),
+  T = normalise_timeout(Timeout),
+  Resp = gen_udp:recv(UdpSocket, Length, T),
   normalise_udp(Resp).
 
 udp_close(UdpSocket) ->
@@ -271,3 +291,6 @@ normalise_ip_address({A, B, C, D}) ->
   {ipv4_address, A, B, C, D};
 normalise_ip_address({A, B, C, D, E, F, G, H}) ->
   {ipv6_address, A, B, C, D, E, F, G, H}.
+
+normalise_timeout(infinity) -> infinity;
+normalise_timeout({timeout, Int}) -> Int.

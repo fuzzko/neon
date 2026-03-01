@@ -12,22 +12,40 @@ const host = "127.0.0.1"
 pub fn upgrade_test() {
   let #(cert, rsa_pk, ca_certs) = testing.pkix_test_data()
 
-  let #(client_tcp, server_ssl) = testing.tcp_connected_pair()
+  // Set up a TCP listener, connect a client, then upgrade both sides to SSL
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
+  let assert Ok(port) = net.port(0)
+  let assert Ok(tcp_listener) = tcp.listen(port, loopback)
+  let assert Ok(port_num) = tcp.port(tcp_listener)
+
+  let hs_opts =
+    ssl.handshake_options(cert, ssl.rsa_private_key(rsa_pk))
+    |> ssl.cacerts(ca_certs)
 
   let test_subject = process.new_subject()
 
   let _pid =
     process.spawn(fn() {
       let assert Ok(timeout) = net.timeout(5000)
-      let assert Ok(listener) = tcp.accept(server_ssl, timeout)
+      let assert Ok(accepted) = tcp.accept(tcp_listener, timeout)
 
-      let assert Ok(_server_ssl) =
-        testing.ssl_handshake(listener, cert, rsa_pk, ca_certs, 5000)
+      // Server-side upgrade: use ssl.handshake_tcp on a TCP socket
+      let assert Ok(_server_ssl) = ssl.handshake_from_tcp(accepted, hs_opts)
       process.send(test_subject, Nil)
     })
 
+  let assert Ok(address) =
+    net.parse_ip_address(host)
+    |> result.map(net.ip_address)
+
+  let assert Ok(client_tcp) =
+    address
+    |> tcp.new(port_num)
+    |> tcp.connect
+
+  // Client-side upgrade
   let assert Ok(_ssl_socket) =
-    ssl.from_tcp(client_tcp, "127.0.0.1")
+    ssl.from_tcp(client_tcp, host)
     |> ssl.verify_none
     |> ssl.connect
 
@@ -39,24 +57,23 @@ pub fn upgrade_test() {
 pub fn connect_test() {
   let #(cert, rsa_pk, ca_certs) = testing.pkix_test_data()
 
-  testing.start_ssl_server()
-
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
   let assert Ok(port) = net.port(0)
 
-  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
-  let assert Ok(listener) = tcp.listen(port, loopback)
+  let assert Ok(listener) = ssl.listen(port, loopback)
+  let assert Ok(port_num) = ssl.port(listener)
 
-  let assert Ok(port_num) = tcp.port(listener)
+  let hs_opts =
+    ssl.handshake_options(cert, ssl.rsa_private_key(rsa_pk))
+    |> ssl.cacerts(ca_certs)
 
   let test_subject = process.new_subject()
 
   let _pid =
     process.spawn(fn() {
       let assert Ok(timeout) = net.timeout(5000)
-      let assert Ok(accepted) = tcp.accept(listener, timeout)
-
-      let assert Ok(_server_ssl) =
-        testing.ssl_handshake(accepted, cert, rsa_pk, ca_certs, 5000)
+      let assert Ok(transport) = ssl.accept(listener, timeout)
+      let assert Ok(_server_ssl) = ssl.handshake(transport, hs_opts)
       process.send(test_subject, Nil)
     })
 
@@ -78,8 +95,6 @@ pub fn connect_verify_peer_test() {
 }
 
 pub fn connect_error_test() {
-  testing.start_ssl_server()
-
   let assert Ok(port) = net.port(1)
 
   let assert Error(ssl.Posix(net.Econnrefused)) =
@@ -257,4 +272,135 @@ pub fn port_closed_test() {
   let assert Ok(Nil) = ssl.close(ssl_socket)
 
   let assert Error(ssl.Posix(_posix)) = ssl.port(ssl_socket)
+}
+
+// ---------- server: listen ---------- //
+
+pub fn listen_test() {
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
+  let assert Ok(port) = net.port(0)
+
+  let assert Ok(listener) = ssl.listen(port, loopback)
+  let assert Ok(listener_port) = ssl.port(listener)
+  assert net.port_to_int(listener_port) > 0
+}
+
+// ---------- server: accept ---------- //
+
+pub fn accept_timeout_test() {
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
+  let assert Ok(port) = net.port(0)
+
+  let assert Ok(listener) = ssl.listen(port, loopback)
+
+  let assert Ok(timeout) = net.timeout(100)
+  let assert Error(ssl.Timeout) = ssl.accept(listener, timeout)
+}
+
+// ---------- server: handshake send/receive ---------- //
+
+pub fn handshake_send_receive_test() {
+  let #(cert, rsa_pk, ca_certs) = testing.pkix_test_data()
+
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
+  let assert Ok(port) = net.port(0)
+
+  let assert Ok(listener) = ssl.listen(port, loopback)
+  let assert Ok(listener_port) = ssl.port(listener)
+
+  let hs_opts =
+    ssl.handshake_options(cert, ssl.rsa_private_key(rsa_pk))
+    |> ssl.cacerts(ca_certs)
+
+  let test_subject = process.new_subject()
+
+  let _pid =
+    process.spawn(fn() {
+      let assert Ok(timeout) = net.timeout(5000)
+      let assert Ok(transport) = ssl.accept(listener, timeout)
+      let assert Ok(server_ssl) = ssl.handshake(transport, hs_opts)
+
+      // Server sends data to client
+      let assert Ok(Nil) = ssl.send(server_ssl, <<"from server":utf8>>)
+
+      // Server receives data from client
+      let assert Ok(<<"from client":utf8>>) =
+        ssl.receive(server_ssl, 11, timeout)
+
+      process.send(test_subject, Nil)
+    })
+
+  let assert Ok(client_ssl) =
+    ssl.new(host, listener_port)
+    |> ssl.verify_none
+    |> ssl.connect
+
+  // Client receives data from server
+  let assert Ok(timeout) = net.timeout(5000)
+  let assert Ok(<<"from server":utf8>>) = ssl.receive(client_ssl, 11, timeout)
+
+  // Client sends data to server
+  let assert Ok(Nil) = ssl.send(client_ssl, <<"from client":utf8>>)
+
+  let assert Ok(_) = process.receive(test_subject, 5000)
+}
+
+// ---------- server: handshake_tcp send/receive ---------- //
+
+pub fn handshake_tcp_send_receive_test() {
+  let #(cert, rsa_pk, ca_certs) = testing.pkix_test_data()
+
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
+  let assert Ok(port) = net.port(0)
+  let assert Ok(tcp_listener) = tcp.listen(port, loopback)
+  let assert Ok(listener_port) = tcp.port(tcp_listener)
+
+  let hs_opts =
+    ssl.handshake_options(cert, ssl.rsa_private_key(rsa_pk))
+    |> ssl.cacerts(ca_certs)
+
+  let test_subject = process.new_subject()
+
+  let _pid =
+    process.spawn(fn() {
+      let assert Ok(timeout) = net.timeout(5000)
+      let assert Ok(accepted) = tcp.accept(tcp_listener, timeout)
+
+      // Server-side START-TLS upgrade
+      let assert Ok(server_ssl) = ssl.handshake_from_tcp(accepted, hs_opts)
+
+      // Server sends data to client
+      let assert Ok(Nil) = ssl.send(server_ssl, <<"starttls server":utf8>>)
+
+      // Server receives data from client
+      let assert Ok(<<"starttls client":utf8>>) =
+        ssl.receive(server_ssl, 15, timeout)
+
+      process.send(test_subject, Nil)
+    })
+
+  let assert Ok(address) =
+    net.parse_ip_address(host)
+    |> result.map(net.ip_address)
+
+  let assert Ok(client_tcp) =
+    address
+    |> tcp.new(listener_port)
+    |> tcp.connect
+
+  // Client-side upgrade
+  let assert Ok(client_ssl) =
+    ssl.from_tcp(client_tcp, host)
+    |> ssl.verify_none
+    |> ssl.connect
+
+  // Client receives data from server
+  let assert Ok(timeout) = net.timeout(5000)
+  let assert Ok(<<"starttls server":utf8>>) =
+    ssl.receive(client_ssl, 15, timeout)
+
+  // Client sends data to server
+  let assert Ok(Nil) = ssl.send(client_ssl, <<"starttls client":utf8>>)
+
+  let assert Ok(_) = process.receive(test_subject, 5000)
 }

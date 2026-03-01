@@ -1,9 +1,28 @@
 import gleam/erlang/charlist.{type Charlist}
+import gleam/option.{type Option, None, Some}
 import neon/net
 import neon/tcp.{type Tcp}
 
 /// An SSL/TLS socket.
 pub type Ssl
+
+/// A private key for SSL/TLS server authentication.
+pub opaque type PrivateKey {
+  /// An RSA private key in DER-encoded binary format.
+  RsaPrivateKey(BitArray)
+  /// An EC private key in DER-encoded binary format.
+  EcPrivateKey(BitArray)
+}
+
+/// Creates an RSA private key from a DER-encoded binary.
+pub fn rsa_private_key(key: BitArray) -> PrivateKey {
+  RsaPrivateKey(key)
+}
+
+/// Creates an EC private key from a DER-encoded binary.
+pub fn ec_private_key(key: BitArray) -> PrivateKey {
+  EcPrivateKey(key)
+}
 
 /// TLS alert descriptions as defined the [erlang ssl module documentation][1].
 ///
@@ -173,6 +192,76 @@ pub fn port(socket: Ssl) -> Result(net.Port, SslError) {
   ssl_port_(socket)
 }
 
+/// Options for performing a server-side TLS handshake.
+///
+/// Create with `handshake_options`, then optionally configure with
+/// `cacerts` and `handshake_timeout` before passing to `handshake`.
+pub opaque type HandshakeOptions {
+  HandshakeOptions(
+    cert: BitArray,
+    key: PrivateKey,
+    cacerts: Option(List(BitArray)),
+    timeout: net.Timeout,
+  )
+}
+
+/// Creates handshake options with the given certificate and private key.
+///
+/// The certificate should be a DER-encoded binary. Defaults to no CA
+/// certificates and an infinite timeout.
+pub fn handshake_options(cert: BitArray, key: PrivateKey) -> HandshakeOptions {
+  HandshakeOptions(cert:, key:, cacerts: None, timeout: net.infinity)
+}
+
+/// Sets the CA certificates for client certificate verification.
+pub fn cacerts(
+  opts: HandshakeOptions,
+  certs: List(BitArray),
+) -> HandshakeOptions {
+  HandshakeOptions(..opts, cacerts: Some(certs))
+}
+
+/// Sets the handshake timeout.
+pub fn handshake_timeout(
+  opts: HandshakeOptions,
+  timeout: net.Timeout,
+) -> HandshakeOptions {
+  HandshakeOptions(..opts, timeout:)
+}
+
+/// Creates an SSL listen socket bound to the given port and IP address.
+pub fn listen(
+  port: net.Port,
+  ip_address: net.IpAddress,
+) -> Result(Ssl, SslError) {
+  ssl_listen_(net.port_to_int(port), ip_address)
+}
+
+/// Accepts an incoming connection on an SSL listen socket.
+///
+/// Returns a transport socket that has not yet completed the TLS
+/// handshake. Call `handshake` to complete the TLS negotiation.
+pub fn accept(socket: Ssl, timeout: net.Timeout) -> Result(Ssl, SslError) {
+  ssl_transport_accept_(socket, timeout)
+}
+
+/// Performs the server-side TLS handshake on a transport socket
+/// returned by `accept`.
+pub fn handshake(socket: Ssl, opts: HandshakeOptions) -> Result(Ssl, SslError) {
+  ssl_handshake_(socket, opts.cert, opts.key, opts.cacerts, opts.timeout)
+}
+
+/// Performs a server-side TLS handshake on a raw TCP socket.
+///
+/// This is the server-side counterpart to `from_tcp` and is used for
+/// START-TLS upgrades where an existing TCP connection is promoted to TLS.
+pub fn handshake_from_tcp(
+  socket: Tcp,
+  opts: HandshakeOptions,
+) -> Result(Ssl, SslError) {
+  ssl_handshake_tcp_(socket, opts.cert, opts.key, opts.cacerts, opts.timeout)
+}
+
 @external(erlang, "neon_ffi", "ssl_upgrade")
 fn ssl_upgrade_(
   socket: Tcp,
@@ -207,3 +296,30 @@ fn ssl_close_(socket: Ssl) -> Result(Nil, SslError)
 
 @external(erlang, "neon_ffi", "ssl_port")
 fn ssl_port_(socket: Ssl) -> Result(net.Port, SslError)
+
+@external(erlang, "neon_ffi", "ssl_listen")
+fn ssl_listen_(port: Int, ip_address: net.IpAddress) -> Result(Ssl, SslError)
+
+@external(erlang, "neon_ffi", "ssl_transport_accept")
+fn ssl_transport_accept_(
+  socket: Ssl,
+  timeout: net.Timeout,
+) -> Result(Ssl, SslError)
+
+@external(erlang, "neon_ffi", "ssl_handshake")
+fn ssl_handshake_(
+  socket: Ssl,
+  cert: BitArray,
+  key: PrivateKey,
+  cacerts: Option(List(BitArray)),
+  timeout: net.Timeout,
+) -> Result(Ssl, SslError)
+
+@external(erlang, "neon_ffi", "ssl_handshake")
+fn ssl_handshake_tcp_(
+  socket: Tcp,
+  cert: BitArray,
+  key: PrivateKey,
+  cacerts: Option(List(BitArray)),
+  timeout: net.Timeout,
+) -> Result(Ssl, SslError)

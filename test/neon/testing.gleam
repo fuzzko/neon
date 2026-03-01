@@ -7,24 +7,32 @@ import neon/tcp.{type Tcp}
 const host = "127.0.0.1"
 
 pub fn ssl_connected_pair() -> #(Ssl, Ssl) {
-  let #(client_tcp, server_tcp) = tcp_connected_pair()
-  let test_subject = process.new_subject()
   let #(cert, rsa_pk, ca_certs) = pkix_test_data()
+
+  let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
+  let assert Ok(port) = net.port(0)
+
+  let assert Ok(listener) = ssl.listen(port, loopback)
+  let assert Ok(listener_port) = ssl.port(listener)
+
+  let hs_opts =
+    ssl.handshake_options(cert, ssl.rsa_private_key(rsa_pk))
+    |> ssl.cacerts(ca_certs)
+
+  let test_subject = process.new_subject()
 
   let _pid =
     process.spawn(fn() {
       let assert Ok(timeout) = net.timeout(5000)
-      let assert Ok(listener) = tcp.accept(server_tcp, timeout)
-      let assert Ok(server_ssl) =
-        ssl_handshake(listener, cert, rsa_pk, ca_certs, 5000)
+      let assert Ok(transport) = ssl.accept(listener, timeout)
+      let assert Ok(server_ssl) = ssl.handshake(transport, hs_opts)
 
       process.send(test_subject, server_ssl)
-
       process.receive_forever(process.new_subject())
     })
 
   let assert Ok(client_ssl) =
-    ssl.from_tcp(client_tcp, "127.0.0.1")
+    ssl.new(host, listener_port)
     |> ssl.verify_none
     |> ssl.connect
 
@@ -34,8 +42,6 @@ pub fn ssl_connected_pair() -> #(Ssl, Ssl) {
 }
 
 pub fn tcp_connected_pair() -> #(Tcp, Tcp) {
-  start_ssl_server()
-
   let assert Ok(port) = net.port(0)
 
   let assert Ok(loopback) = net.ipv4_address(127, 0, 0, 1)
@@ -54,15 +60,3 @@ pub fn tcp_connected_pair() -> #(Tcp, Tcp) {
 
 @external(erlang, "ssl_test_ffi", "pkix_test_data")
 pub fn pkix_test_data() -> #(BitArray, BitArray, List(BitArray))
-
-@external(erlang, "ssl_test_ffi", "start_ssl_server")
-pub fn start_ssl_server() -> Nil
-
-@external(erlang, "ssl_test_ffi", "ssl_handshake")
-pub fn ssl_handshake(
-  listener: Tcp,
-  cert: BitArray,
-  rsa_private_key: BitArray,
-  ca_certs: List(BitArray),
-  timeout: Int,
-) -> Result(Ssl, net.Posix)
