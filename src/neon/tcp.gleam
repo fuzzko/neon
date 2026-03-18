@@ -16,7 +16,7 @@ pub type TcpError {
   Timeout
   /// The Erlang VM can't allocate more resources for network operations.
   SystemLimit
-  /// The specified PID is not socket's owner.
+  /// The calling process is not the current owner of the socket.
   NotOwner
   /// A POSIX error.
   Posix(net.Posix)
@@ -114,7 +114,7 @@ pub fn passive(socket: Tcp) -> Result(Tcp, TcpError) {
 
 /// Change the controlling process (owner) of a socket.
 ///
-/// The controlling process is the process that the socket sends message to.
+/// The controlling process is the process that the socket sends messages to.
 pub fn controlling_process(
   socket: Tcp,
   pid: process.Pid,

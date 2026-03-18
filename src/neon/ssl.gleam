@@ -234,7 +234,7 @@ pub fn passive(socket: Ssl) -> Result(Ssl, SslError) {
 
 /// Change the controlling process (owner) of a socket.
 ///
-/// The controlling process is the process that the socket sends message to.
+/// The controlling process is the process that the socket sends messages to.
 pub fn controlling_process(
   socket: Ssl,
   pid: process.Pid,
